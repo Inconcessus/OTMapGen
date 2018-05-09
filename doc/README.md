@@ -4,22 +4,23 @@
 
 # Procedural Generation of Open Tibia maps
 
-This contribution describes the in-depth design of OTMapGen: a tool for the procedural generation of Open Tibia maps.
+This contribution describes the in-depth design of OTMapGen: a tool for the procedural generation of Open Tibia maps. This README documents part of the development process.
 
+Hope you enjoy the read,
+Forby
+
+## Introduction
 Mapping is a term that describes level editing for the previously popular isometric MMORPG Tibia (http://www.tibia.com). Open Tibia is an open-source project that emulates an official Tibia server. Developers can design a server with custom areas, monsters, quests, and other types of game content.
 
 In Tibia, the world is built from 32x32 pixel sprites. Historically, areas used to be designed by hand, with each tile of the tile set deliberately placed. In recent years, tools (e.g. Remere's Map Editor) introduced automatic features: e.g. tile brushing and automated bordering between adjacent tiles.
 
-World maps are saved in the OTBM format. To create world maps we must begin with an application that can read & write from and to this binary file format.
+World maps are saved in the OTBM format. To create world maps we must begin with an application that can read & write from and to this binary file format. 
 
 ## Chapter 1: working with the OTBM file format
-
 ### 1.1 OTBM2JSON
-
 OTBM2JSON is a NodeJS library written to parse the OTBM files to an intermediary JSON structure. This structure can be programatically modified and written back to the OTBM format. For a detailed implementation please refer to the GitHub repository: [https://github.com/Inconcessus/OTBM2JSON](https://github.com/Inconcessus/OTBM2JSON). Below is a description of the OTBM format and its implemetation in the OTBM2JSON library.
 
 ### 1.2 OTBM Format Description
-
 The Open Tibia Binary Mapping (OTBM) format is the prevalent format for creating, sharing, and using world maps. Following is a comprehensive description of the binary format. Please note that the byte order of this format is little endian with the least significant byte first. Each file is initialized by four magic bytes:
 
     0x00 0x00 0x00 0x00
@@ -268,10 +269,15 @@ Noise is generated at a chosen frequency `f`. For a single low frequency (N = 1)
 ### 2.2 Elevation function
 The function that transforms (x, y) coordinates to elevation is fundamentally based on random noise. However, for each value, we  apply another transformation that manipulates the terrain in a controlled manner. This can mean lowering elevation systematically with distance from the center: to create an island.
 
+The elevation function `function zNoiseFunction` in this repository is complex and the sensitivity of parameters is fairly unpredicatable. 
+
 ### 2.3 Mapping elevation to tiles
 The simple approach of mapping everything below a certain value to water, then grass, then mountain is chosen. We round the elevation to the nearest integer between 0 and 7 to get the z-coordinate of the tile.
 
 ### 2.4 Bordering
 Bordering uses a simple algorithm that checks the neighbours for each tile to see what borders need to be applied. This process is similar for grass, water, and mountains. Trees and shrubs are added through a parallel noise map where a high noise represents an area with many trees.
 
-More information to be added.
+### 2.5 Creating the OTBM
+When all tiles and items have been generated, we write the information to a JSON structure that can be used by the OTBM2JSON library. In the end, we write the data to an OTBM file that can be loaded by other tools.
+
+More information to be added eventually 🐢.

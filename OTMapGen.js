@@ -193,18 +193,22 @@ function zNoiseFunction(x, y) {
    */
 
   // Island parameters
-  const a = 0.01;
-  const b = 1.25;
-  const c = 0.75;
+  const a = 0.05;
+  const b = 1.10;
+  const c = 1.10;
   const e = 1.00;
-  const f = 64.0;
+  const f = 16.0;
 
   // Scaled coordinates between -0.5 and 0.5
   var nx = x / (MAP.WIDTH - 1) - 0.5;
   var ny = y / (MAP.HEIGHT - 1) - 0.5;
 
   // Manhattan distance
-  var d = 2 * Math.max(Math.abs(nx), Math.abs(ny));
+  if(false) {
+    var d = 2 * Math.max(Math.abs(nx), Math.abs(ny));
+  } else {
+    var d = Math.sqrt(nx * nx + ny * ny);
+  }
 
   // Noise frequencies and weights
   var noise = (
@@ -356,6 +360,15 @@ function generateTileAreas(layers) {
         items = items.concat(border.getMountainWall(neighbours).map(createOTBMItem));
       }
 
+      // Crappy noise map to put forests (FIXME)
+      // Check if the tile is occupied
+      if(!items.length && x === GRASS_TILE_ID) {
+        n = (simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y));
+        if(n > 0.15) {
+          items.push(createOTBMItem(randomTree()));
+        }
+      }
+
       // Border at foot of mountain
       if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
         items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
@@ -371,14 +384,6 @@ function generateTileAreas(layers) {
         items = items.concat(border.getWaterBorder(neighbours).map(createOTBMItem));
       }
   
-      // Crappy noise map to put forests (FIXME)
-      if(x === GRASS_TILE_ID) {
-        n = (simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y));
-        if(n > 0.15) {
-          items.push(createOTBMItem(randomTree()));
-        }
-      }
- 
       // Randomize the tile
       x = randomizeTile(x);
 

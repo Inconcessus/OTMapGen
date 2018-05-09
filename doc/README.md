@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/banner.png">
+  <img src="../images/banner.png">
 </p>
 
 # Procedural Generation of Open Tibia maps

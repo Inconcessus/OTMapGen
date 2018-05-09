@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/banner.png">
+</p>
+
 # Procedural Generation of Open Tibia maps
 
 This contribution describes the in-depth design of OTMapGen: a tool for the procedural generation of Open Tibia maps.

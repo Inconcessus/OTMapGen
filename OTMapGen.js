@@ -281,9 +281,10 @@ function simplex2freq(f, weight, nx, ny) {
    */
 
   // Scale the frequency to the map size
-  f = f * MAP.WIDTH / TILE_AREA_SIZE;
+  fWidth = f * MAP.WIDTH / TILE_AREA_SIZE;
+  fHeight = f * MAP.HEIGHT / TILE_AREA_SIZE;
 
-  return weight * noise.simplex2(f * nx, f * ny);
+  return weight * noise.simplex2(fWidth * nx, fHeight * ny);
 
 }
 

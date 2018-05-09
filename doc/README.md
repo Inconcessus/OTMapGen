@@ -249,7 +249,7 @@ The following byte is the count of an item limited to 255.
     0x08 (1 byte) = 8
 
 ##### `0x16 ` OTBM_ATTR_RUNE_CHARGES 
-The following byte is the count of an item limited to 255.
+The following byte are the charges of a rune limited to 65535.
 
     0x16
     0x08 0x00 (2 bytes) = 8

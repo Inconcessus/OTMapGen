@@ -258,4 +258,12 @@ With the binary format specification available, reading and writing the OTBM fil
 ## Chapter 2: Generating realistic terrain using noise functions
 Noise functions (e.g. perlin, simplex) provide an easy way for generating realistic looking terrain. The transformation is a function of relative (x, y) coordinates and returns an elevation.
  
+### 2.1 Noise frequency stacking
+Noise is generated at a chosen frequency `f`. For a single low frequency (N = 1) we end up with varying degrees of noise-generated elevation. Choosing a single low frequency generates aritificial looking terrain. By stacking increasingly higher frequencies at different weights we end up with more realistic looking terrain.
+
+<p align="center">
+  <img src="../images/banner.png">
+</p>
+
+
 More information to be added.

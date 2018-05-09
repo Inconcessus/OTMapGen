@@ -256,7 +256,7 @@ The following byte is the count of an item limited to 255.
 With the binary format specification available, reading and writing the OTBM files is quite trivial. We can write simple recursive functions for the reading (`function readNode`) and the writing (`function writeNode`) of the nodes. For detailed information please refer to source code at the repository linked at the top of this chapter. In addition, we need to implement all data structures described above that are triggered on their respective magic initialization bytes. The last step is to remove & add the escape character for escaped literals.
 
 ## Chapter 2: Generating realistic terrain using noise functions
-Noise functions (e.g. perlin, simplex) provide an easy way for generating realistic looking terrain. The transformation is a function of relative (x, y) coordinates and returns an elevation.
+Noise functions (e.g. perlin, simplex) provide a way for generating realistic looking terrain. The transformation is a function of relative (x, y) coordinates and returns an elevation.
  
 ### 2.1 Noise frequency stacking
 Noise is generated at a chosen frequency `f`. For a single low frequency (N = 1) we end up with varying degrees of noise-generated elevation. Choosing a single low frequency generates aritificial looking terrain. By stacking increasingly higher frequencies at different weights we end up with more realistic looking terrain.
@@ -265,5 +265,13 @@ Noise is generated at a chosen frequency `f`. For a single low frequency (N = 1)
   <img src="../images/freq.png">
 </p>
 
+### 2.2 Elevation function
+The function that transforms (x, y) coordinates to elevation is fundamentally based on random noise. However, for each value, we  apply another transformation that manipulates the terrain in a controlled manner. This can mean lowering elevation systematically with distance from the center: to create an island.
+
+### 2.3 Mapping elevation to tiles
+The simple approach of mapping everything below a certain value to water, then grass, then mountain is chosen. We round the elevation to the nearest integer between 0 and 7 to get the z-coordinate of the tile.
+
+### 2.4 Bordering
+Bordering uses a simple algorithm that checks the neighbours for each tile to see what borders need to be applied. This process is similar for grass, water, and mountains. Trees and shrubs are added through a parallel noise map where a high noise represents an area with many trees.
 
 More information to be added.

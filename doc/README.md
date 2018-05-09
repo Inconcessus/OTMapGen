@@ -7,6 +7,7 @@
 This contribution describes the in-depth design of OTMapGen: a tool for the procedural generation of Open Tibia maps. This README documents part of the development process.
 
 Hope you enjoy the read,
+
 Forby
 
 ## Introduction

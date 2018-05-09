@@ -1,4 +1,4 @@
-const otbm2json = require("../OTBM2JSON/otbm2json");
+const otbm2json = require("../../OTBM2JSON/otbm2json");
 const noise = require("./lib/noise").noise;
 const border = require("./lib/border");
 
@@ -16,6 +16,8 @@ const WATER_TILE_ID = 4615;
 const GRASS_TILE_ID = 4526;
 const STONE_TILE_ID = 4405;
 const MOUNTAIN_TILE_ID = 919;
+
+const TILE_AREA_SIZE = 0xFF;
 
 function setMapHeader(data) {
 
@@ -41,8 +43,6 @@ function getRandomBetween(min, max) {
 
 }
 
-
-
 function randomTree() {
 
   /* FUNCTION randomTree
@@ -58,6 +58,32 @@ function randomTree() {
 
 }
 
+function createLayer() {
+
+  /* FUNCTION createLayer
+   * Creates an empty layer of map size
+   */
+
+  return new Array(MAP.WIDTH * MAP.HEIGHT).fill(0);
+
+}
+
+function mapElevation(z) {
+
+  /* FUNCTION mapElevation 
+   * Maps particular elevation to tile id 
+   */
+
+  switch(true) {
+    case (z < 0):
+      return WATER_TILE_ID;
+    case (z > 3):
+      return STONE_TILE_ID;
+    default:
+      return GRASS_TILE_ID;
+  }
+
+}
 
 function generateMapLayers() {
 
@@ -66,54 +92,51 @@ function generateMapLayers() {
    * Layers are later converted to area tiles for OTBM2JSON
    */
 
-  var id;
+  var z, id;
 
   // Seed the noise function
   noise.seed(MAP.SEED);
 
-  // Create zero filled layers
-  var layers = new Array();
-  for(var i = 0; i < 8; i++) {
-    layers.push(new Array(MAP.WIDTH * MAP.HEIGHT).fill(0));
-  }
+  // Create 8 zero filled layers
+  var layers = new Array(8).fill(0).map(createLayer);
 
   // Loop over the requested map width and height
-  for(var x = 0; x < MAP.WIDTH; x++) {
-
-    for(var y = 0; y < MAP.HEIGHT; y++) {
+  for(var y = 0; y < MAP.HEIGHT; y++) {
+    for(var x = 0; x < MAP.WIDTH; x++) {
   
       // Get the elevation
-      var z = zNoiseFunction(x, y);
-  
-      // Anything below is the water level
-      if(z < 0) {
-        id = WATER_TILE_ID;
-      } else if(z > 3) {
-        id = STONE_TILE_ID;
-      } else {
-        id = GRASS_TILE_ID; 
-      }
+      z = zNoiseFunction(x, y);
+      id = mapElevation(z);
+
+      // Clamp the value
+      z = Math.max(Math.min(z, 7), 0);
  
-      // Keep within bounds
-      if(z <= 0) z = 0;
-      if(z > 7) z = 7;
-
-      // Get the index of the x, y in a 1D array
-      var index = getIndex(x, y);
-
-      // Save the tile identifier
-      layers[z][index] = id;
-
-      // Fill lower floors with mountain  
-      for(var k = z - 1; k >= 0; k--) {
-        layers[k][index] = MOUNTAIN_TILE_ID;
-      }
+      // Fill the column with tiles
+      fillColumn(layers, x, y, z, id);
   
     }
-
   }
 
   return layers;
+
+}
+
+function fillColumn(layers, x, y, z, id) {
+
+  /* FUNCTION fillColumn 
+   * Fills a column at x, y until z, with id on top 
+   */
+
+  // Get the index of the tile
+  var index = getIndex(x, y);
+
+  // Set top item
+  layers[z][index] = id;
+
+  // Fill downwards with mountain
+  for(var i = 0; i < z; i++) {
+    layers[i][index] = MOUNTAIN_TILE_ID;
+  }
 
 }
 
@@ -123,7 +146,7 @@ function getIndex(x, y) {
    * Converts x, y to layer index
    */
 
-  return y + x * MAP.HEIGHT;
+  return x + y * MAP.WIDTH;
 
 }
 
@@ -132,16 +155,6 @@ function getAdjacentTiles(layer, coordinates) {
   /* FUNCTION getAdjacentTiles
    * Returns adjacent tiles of another tile
    */
-
-  function getTile(layer, x, y) {
-
-    /* FUNCTION getTile
-     * Returns tile at layer & coordinates
-     */
-
-    return layer[getIndex(x, y)];
-
-  }
 
   var x = coordinates.x;
   var y = coordinates.y;
@@ -156,6 +169,16 @@ function getAdjacentTiles(layer, coordinates) {
     "W": getTile(layer, x - 1, y),
     "NW": getTile(layer, x - 1, y - 1)
   }
+
+}
+
+function getTile(layer, x, y) {
+
+  /* FUNCTION getTile
+   * Returns tile at layer & coordinates
+   */
+
+  return layer[getIndex(x, y)];
 
 }
 
@@ -197,9 +220,7 @@ function zNoiseFunction(x, y) {
   noise = Math.pow(noise, e);
 
   // Use distance from center to create an island
-  noise = Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - 1;
-
-  return noise;
+  return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - 1;
 
 }
 
@@ -210,8 +231,8 @@ function getCoordinates(index) {
    */
 
   return {
-    "y": index % MAP.HEIGHT,
-    "x": Math.floor(index / MAP.HEIGHT)
+    "x": index % MAP.WIDTH,
+    "y": Math.floor(index / MAP.WIDTH)
   }
 
 }
@@ -224,7 +245,7 @@ function randomizeTile(x) {
    */
 
   function getRandomWaterTile() {
-    return getRandomBetween(4608, 4625);
+    return getRandomBetween(WATER_TILE_ID, 4625);
   }
   
   function getRandomMountainTile() {
@@ -256,7 +277,7 @@ function simplex2freq(f, weight, nx, ny) {
    */
 
   // Scale the frequency to the map size
-  f = f * MAP.WIDTH / 255;
+  f = f * MAP.WIDTH / TILE_AREA_SIZE;
 
   return weight * noise.simplex2(f * nx, f * ny);
 
@@ -299,8 +320,8 @@ function generateTileAreas(layers) {
       var coordinates = getCoordinates(i);  
   
       // Convert global x, y coordinates to tile area coordinates (0, 255, 510, 765)
-      var areaX = 255 * Math.floor(coordinates.x / 255);
-      var areaY = 255 * Math.floor(coordinates.y / 255);
+      var areaX = TILE_AREA_SIZE * Math.floor(coordinates.x / TILE_AREA_SIZE);
+      var areaY = TILE_AREA_SIZE * Math.floor(coordinates.y / TILE_AREA_SIZE);
   
       // Invert the depth
       var areaZ = 7 - z;
@@ -352,7 +373,7 @@ function generateTileAreas(layers) {
   
       // Crappy noise map to put forests (FIXME)
       if(x === GRASS_TILE_ID) {
-        n = (simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y) + simplex2freq(64, 1.0, coordinates.x, coordinates.y)) / 2.0;
+        n = (simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y));
         if(n > 0.15) {
           items.push(createOTBMItem(randomTree()));
         }
@@ -365,8 +386,8 @@ function generateTileAreas(layers) {
       // Make sure to give coordinates in RELATIVE tile area coordinates
       tileAreas[areaIdentifier].tiles.push({
         "type": "OTBM_TILE",
-        "x": coordinates.x % 255,
-        "y": coordinates.y % 255,
+        "x": coordinates.x % TILE_AREA_SIZE,
+        "y": coordinates.y % TILE_AREA_SIZE,
         "tileid": x,
         "items": items
       });
@@ -382,7 +403,7 @@ function generateTileAreas(layers) {
 if(require.main === module) {
 
   // Read default OTMapGen header
-  var json = require("./header");
+  var json = require("./json/header");
 
   // Create temporary layers followed by tile areas
   var layers = generateMapLayers();

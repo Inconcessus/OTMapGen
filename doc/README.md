@@ -262,7 +262,7 @@ Noise functions (e.g. perlin, simplex) provide an easy way for generating realis
 Noise is generated at a chosen frequency `f`. For a single low frequency (N = 1) we end up with varying degrees of noise-generated elevation. Choosing a single low frequency generates aritificial looking terrain. By stacking increasingly higher frequencies at different weights we end up with more realistic looking terrain.
 
 <p align="center">
-  <img src="../images/banner.png">
+  <img src="../images/freq.png">
 </p>
 
 

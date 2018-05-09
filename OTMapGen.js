@@ -1,4 +1,4 @@
-const otbm2json = require("../../OTBM2JSON/otbm2json");
+const otbm2json = require("./OTBM2JSON/otbm2json");
 const noise = require("./lib/noise").noise;
 const border = require("./lib/border");
 

@@ -6,7 +6,7 @@ const __VERSION__ = "0.1.0";
 
 // Configuration
 const MAP = {
-  "SEED": 1,
+  "SEED": 16,
   "WIDTH": 512,
   "HEIGHT": 512
 }
@@ -49,11 +49,97 @@ function randomTree() {
    * Returns a random shrub or tree
    */
 
+  var value = Math.random();
+
   // Shrubs or trees
-  if(Math.random() < 0.25) {
-    return getRandomBetween(2700, 2708);
-  } else {
-    return getRandomBetween(2767, 2768);
+  switch(true) {
+    case (value < 0.10):
+      return getRandomBetween(2700, 2708);
+    case (value < 0.30):
+      return getRandomBetween(2767, 2768);
+    case (value < 0.95):
+      return getRandomBetween(6216, 6219);
+    default:
+      if(Math.random() < 0.5) {
+        return randomFlower();
+      } else {
+        return randomFlower2();
+      }
+  }
+
+}
+
+function randomWaterPlant(neighbours) {
+
+  /* FUNCTION randomWaterPlant
+   * Returns a random water plant
+   */
+
+  const SWAMP_PLANT_START = 2771;
+  const SWAMP_PLANT_END = 2780;
+  const WATER_LILY_START = 2755;
+  const WATER_LILY_END = 2758;
+
+  var nNeighbours = countNeighbours(neighbours, GRASS_TILE_ID);
+
+  // "Swamp" plants
+  if(nNeighbours > 2 && Math.random() < 0.2) {
+    return [getRandomBetween(SWAMP_PLANT_START, SWAMP_PLANT_END)];
+  }
+
+  // Water lillies
+  if(nNeighbours > 1 && Math.random() < 0.25) {
+    return [getRandomBetween(WATER_LILY_START, WATER_LILY_END)];
+  }
+
+  return new Array();
+
+}
+
+function countNeighbours(neighbours, id) {
+
+  /* FUNCTION countNeighbours
+   * Counts the number of neighbours with particular ID
+   */
+
+  return Object.keys(neighbours).filter(function(x) {
+    return neighbours[x] === id;
+  }).length;
+
+}
+
+function randomFlower2() {
+
+  /* FUNCTION countNeighbours
+   * Return a random flower with different flower
+   */
+
+  return getRandomBetween(4152, 4158);
+
+}
+
+function randomFlower() {
+
+  /* FUNCTION randomFlower
+   * Return a random flower with different weights
+   */
+
+  const MOON_FLOWERS = 2740;
+  const MOON_FLOWER = 2741;
+  const WHITE_FLOWER = 2742;
+  const HEAVEN_BLOSSOM = 2743;
+
+  var value = Math.random();
+
+  switch(true) {
+    case (value < 0.50):
+      return MOON_FLOWER;
+    case (value < 0.70):
+      return WHITE_FLOWER;
+    case (value < 0.90):
+      return MOON_FLOWERS;
+    default:
+      return HEAVEN_BLOSSOM;
   }
 
 }
@@ -193,11 +279,11 @@ function zNoiseFunction(x, y) {
    */
 
   // Island parameters
-  const a = 0.05;
-  const b = 1.10;
-  const c = 1.10;
+  const a = 0.1;
+  const b = 1.00;
+  const c = 1.00;
   const e = 1.00;
-  const f = 16.0;
+  const f = 32.0;
 
   // Scaled coordinates between -0.5 and 0.5
   var nx = x / (MAP.WIDTH - 1) - 0.5;
@@ -225,6 +311,19 @@ function zNoiseFunction(x, y) {
 
   // Use distance from center to create an island
   return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - 1;
+
+}
+
+function randomTileMoss() {
+
+  /* FUNCTION randomTileMoss
+   * Returns a random moss tile for stone tiles
+   */
+
+  const MOSS_TILE_START = 4580;
+  const MOSS_TILE_END = 4594;
+
+  return getRandomBetween(MOSS_TILE_START, MOSS_TILE_END);
 
 }
 
@@ -315,11 +414,6 @@ function generateTileAreas(layers) {
   
     // For all tiles on each layer
     layer.forEach(function(x, i) {
-  
-      // The tile identifier is NULL: skip
-      if(x === 0) {
-        return;
-      }
 
       // Transform layer index to x, y coordinates
       var coordinates = getCoordinates(i);  
@@ -352,7 +446,7 @@ function generateTileAreas(layers) {
       var neighbours = getAdjacentTiles(layer, coordinates);
   
       // Mountain tile: border outside 
-      if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
+      if(x !== MOUNTAIN_TILE_ID) {
         items = items.concat(border.getMountainWallOuter(neighbours).map(createOTBMItem));
       }
 
@@ -361,30 +455,47 @@ function generateTileAreas(layers) {
         items = items.concat(border.getMountainWall(neighbours).map(createOTBMItem));
       }
 
+      n = (simplex2freq(8, 3, coordinates.x, coordinates.y) + simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y)) / 4;
+
       // Crappy noise map to put forests (FIXME)
       // Check if the tile is occupied
       if(!items.length && x === GRASS_TILE_ID) {
-        n = (simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y));
-        if(n > 0.15) {
+        if(n > 0) {
           items.push(createOTBMItem(randomTree()));
         }
       }
 
-      // Border at foot of mountain
-      if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
-        items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
+      // Add a random water plant
+      if(!items.length && x === WATER_TILE_ID) {
+        items.push(createOTBMItem(randomWaterPlant(neighbours)));
       }
-  
+
+      // Add a random water plant
+      if(x === STONE_TILE_ID) {
+        if(n > 0.25) {
+          items.push(createOTBMItem(randomTileMoss()));
+        }
+      }
+
       // Border on top of mountain
       if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
         items = items.concat(border.getFloatingBorder(neighbours).map(createOTBMItem));
       }
-  
+
       // Border grass & water interface
       if(x === GRASS_TILE_ID) {
         items = items.concat(border.getWaterBorder(neighbours).map(createOTBMItem));
       }
-  
+
+      // Border at foot of mountain
+      if(x !== MOUNTAIN_TILE_ID) {
+        items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
+      }
+ 
+      if(x === 0 && items.length === 0) {
+        return;
+      }
+
       // Randomize the tile
       x = randomizeTile(x);
 

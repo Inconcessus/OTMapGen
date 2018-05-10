@@ -2,13 +2,13 @@ const otbm2json = require("./OTBM2JSON/otbm2json");
 const noise = require("./lib/noise").noise;
 const border = require("./lib/border");
 
-const __VERSION__ = "0.1.0";
+const __VERSION__ = "0.2.0";
 
 // Configuration
 const MAP = {
-  "SEED": 16,
-  "WIDTH": 512,
-  "HEIGHT": 512
+  "SEED": 0,
+  "WIDTH": 255,
+  "HEIGHT": 255
 }
 
 // Some global identifiers
@@ -107,7 +107,7 @@ function randomWaterPlant(neighbours) {
   }
 
   // Water lillies
-  if(nNeighbours > 1 && Math.random() < 0.25) {
+  if(nNeighbours > 1 && Math.random() < 0.15) {
     return [getRandomBetween(WATER_LILY_START, WATER_LILY_END)];
   }
 
@@ -148,17 +148,32 @@ function randomFlower() {
   const WHITE_FLOWER = 2742;
   const HEAVEN_BLOSSOM = 2743;
 
-  var value = Math.random();
+  var weights = [
+    {"id": MOON_FLOWERS, "weight": 0.5},
+    {"id": MOON_FLOWER, "weight": 0.20},
+    {"id": WHITE_FLOWER, "weight": 0.20},
+    {"id": HEAVEN_BLOSSOM, "weight": 0.1}
+  ];
 
-  switch(true) {
-    case (value < 0.50):
-      return MOON_FLOWER;
-    case (value < 0.70):
-      return WHITE_FLOWER;
-    case (value < 0.90):
-      return MOON_FLOWERS;
-    default:
-      return HEAVEN_BLOSSOM;
+  return getWeightedRandom(weights);
+
+}
+
+function getWeightedRandom(weights) {
+
+  /* FUNCTION getWeightedRandom
+   * Return a random element based on a weight
+   */
+
+  // Draw a random sample
+  var value = Math.random();
+  var sum = 0;
+
+  for(var i = 0; i < weights.length; i++) {
+    sum += weights[i].weight;
+    if(value < sum) {
+      return weights[i].id;
+    }
   }
 
 }
@@ -197,6 +212,8 @@ function generateMapLayers() {
    * Layers are later converted to area tiles for OTBM2JSON
    */
 
+  const SMOOTH_COASTLINE = true;
+
   var z, id;
 
   // Seed the noise function
@@ -204,6 +221,8 @@ function generateMapLayers() {
 
   // Create 8 zero filled layers
   var layers = new Array(8).fill(0).map(createLayer);
+
+  console.log("Creating map layers.");
 
   // Loop over the requested map width and height
   for(var y = 0; y < MAP.HEIGHT; y++) {
@@ -222,7 +241,83 @@ function generateMapLayers() {
     }
   }
 
+  // Option to smooth coast line
+  if(SMOOTH_COASTLINE) {
+    layers = smoothCoastline(layers);
+  }
+
   return layers;
+
+}
+
+function smoothCoastline(layers) {
+
+  /* FUNCTION smoothCoastline
+   * Algorithm that smoothes the coast line
+   * to get rid of impossible water borders
+   */
+
+  var iterate = true;
+  var i = 0;
+
+  // Constant iteration to remove impossible coastline tiles
+  while(iterate) {
+ 
+    console.log("Smoothing coastline <iteration " + i++ + ">");
+
+    iterate = false;
+
+    layers = layers.map(function(layer, i) {
+
+      // Coastline only on the lowest floor
+      if(i !== 0) {
+        return layer;
+      }
+
+      return layer.map(function(x, i) {
+
+        // Skip anything that is not a grass tile
+        if(x !== GRASS_TILE_ID) {
+          return x;
+        }
+
+        // Get the coordinate and the neighbours
+        var coordinates = getCoordinates(i);
+        var neighbours = getAdjacentTiles(layer, coordinates);
+
+        // If the tile needs to be eroded, we will need to reiterate
+        if(tileShouldErode(neighbours)) {
+          x = WATER_TILE_ID;
+          iterate = true;
+        }
+
+        return x;
+
+      });
+
+    });
+  
+  }
+
+  return layers;
+
+}
+
+function tileShouldErode(neighbours) {
+
+  /* FUNCTION tileShouldErode
+   * Returns whether a tile should be eroded by the coastline
+   */
+
+  return (
+   (neighbours.N === WATER_TILE_ID && neighbours.S === WATER_TILE_ID) ||
+   ((neighbours.E !== WATER_TILE_ID || neighbours.S !== WATER_TILE_ID) && neighbours.NE === WATER_TILE_ID && neighbours.SW === WATER_TILE_ID) ||
+   ((neighbours.W !== WATER_TILE_ID || neighbours.N !== WATER_TILE_ID) && neighbours.SE === WATER_TILE_ID && neighbours.NW === WATER_TILE_ID) ||
+   (neighbours.N === WATER_TILE_ID && neighbours.E === WATER_TILE_ID && neighbours.S === WATER_TILE_ID) ||
+   (neighbours.E === WATER_TILE_ID && neighbours.S === WATER_TILE_ID && neighbours.W === WATER_TILE_ID) ||
+   (neighbours.S === WATER_TILE_ID && neighbours.W === WATER_TILE_ID && neighbours.N === WATER_TILE_ID) ||
+   (neighbours.W === WATER_TILE_ID && neighbours.N === WATER_TILE_ID && neighbours.E === WATER_TILE_ID)
+  );
 
 }
 
@@ -299,10 +394,11 @@ function zNoiseFunction(x, y) {
 
   // Island parameters
   const a = 0.1;
-  const b = 1.00;
-  const c = 1.00;
-  const e = 1.00;
+  const b = 2.00;
+  const c = 1.60;
+  const e = 2.00;
   const f = 32.0;
+  const w = 3.00;
 
   // Scaled coordinates between -0.5 and 0.5
   var nx = x / (MAP.WIDTH - 1) - 0.5;
@@ -329,7 +425,7 @@ function zNoiseFunction(x, y) {
   noise = Math.pow(noise, e);
 
   // Use distance from center to create an island
-  return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - 1;
+  return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - (w | 0);
 
 }
 
@@ -424,6 +520,8 @@ function generateTileAreas(layers) {
   /* FUNCTION generateTileAreas
    * Converts layers to OTBM tile areas
    */
+
+  console.log("Creating OTBM tile areas and adding clutter.");
 
   // Create hashmap for the tile areas
   var tileAreas = new Object();
@@ -541,6 +639,10 @@ function generateTileAreas(layers) {
 
 if(require.main === module) {
 
+  var start = Date.now();
+
+  console.log("Creating map of size " + MAP.WIDTH + "x" + MAP.HEIGHT + " using seed " + MAP.SEED + ".");
+
   // Read default OTMapGen header
   var json = require("./json/header");
 
@@ -555,6 +657,8 @@ if(require.main === module) {
 
   // Write the map header
   setMapHeader(json.data);
+
+  console.log("Finished generation in " + (Date.now()  - start) + "ms. Writing output to map.otbm");
 
   // Write the JSON using the OTBM2JSON lib
   otbm2json.write("map.otbm", json);

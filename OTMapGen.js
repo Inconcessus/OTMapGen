@@ -43,11 +43,28 @@ function getRandomBetween(min, max) {
 
 }
 
+function randomPebble() {
+
+  var value = Math.random();
+
+  switch(true) {
+    case (value < 0.05):
+      return getRandomBetween(3648, 3652);
+    case (value < 0.25):
+      return getRandomBetween(3611, 3614);
+    default:
+      return getRandomBetween(3653, 3656);
+  }
+
+}
+
 function randomTree() {
 
   /* FUNCTION randomTree
    * Returns a random shrub or tree
    */
+
+  const BLUEBERRY_BUSH = 2785;
 
   var value = Math.random();
 
@@ -59,6 +76,8 @@ function randomTree() {
       return getRandomBetween(2767, 2768);
     case (value < 0.95):
       return getRandomBetween(6216, 6219);
+    case (value < 0.96):
+      return BLUEBERRY_BUSH;
     default:
       if(Math.random() < 0.5) {
         return randomFlower();
@@ -474,6 +493,9 @@ function generateTileAreas(layers) {
       if(x === STONE_TILE_ID) {
         if(n > 0.25) {
           items.push(createOTBMItem(randomTileMoss()));
+        }
+        if(n > 0 && Math.random() < 0.5) {
+          items.push(createOTBMItem(randomPebble()));
         }
       }
 

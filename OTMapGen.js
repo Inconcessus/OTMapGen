@@ -511,7 +511,7 @@ function randomizeTile(x) {
    */
 
   function getRandomWaterTile() {
-    return getRandomBetween(WATER_TILE_ID, 4625);
+    return getRandomBetween(WATER_TILE_ID, 4619);
   }
   
   function getRandomMountainTile() {

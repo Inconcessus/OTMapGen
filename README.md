@@ -3,7 +3,7 @@
 Simple prototype for a simplex noise seeded OpenTibia map generator. This generator uses 2D simplex noise to create releastic terrain. Automatic bordering is included.
 
 <p align="center">
-  <img src="images/generated.png">
+  <img src="images/banner.png">
 </p>
 
 # Dependencies
@@ -13,8 +13,9 @@ Simple prototype for a simplex noise seeded OpenTibia map generator. This genera
 
 # Usage
 
-Clone the `OTBM2JSON` library from GitHub. It is option to modify the noise seed and change some generation parameters inside generation script. Then call the `OTMapGen.js` and look for the created output: `map.otbm`.
+Clone this & the `OTBM2JSON` library from GitHub. It is option to modify the noise seed and change some generation parameters inside generation script. Then call the `OTMapGen.js` and look for the created output: `map.otbm`.
 
+    $ git clone https://github.com/Inconcessus/OTMapGen.git
     $ git clone https://github.com/Inconcessus/OTBM2JSON.git
     $ node OTMapGen.js 
     

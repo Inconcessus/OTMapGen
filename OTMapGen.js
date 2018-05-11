@@ -2,19 +2,20 @@ const otbm2json = require("./OTBM2JSON/otbm2json");
 const noise = require("./lib/noise").noise;
 const border = require("./lib/border");
 
-const __VERSION__ = "0.1.0";
+const __VERSION__ = "0.2.0";
 
 // Configuration
 const MAP = {
-  "SEED": 1,
-  "WIDTH": 512,
-  "HEIGHT": 512
+  "SEED": 0,
+  "WIDTH": 255,
+  "HEIGHT": 255
 }
 
 // Some global identifiers
 const WATER_TILE_ID = 4615;
 const GRASS_TILE_ID = 4526;
 const STONE_TILE_ID = 4405;
+const SAND_TILE_ID = 231;
 const MOUNTAIN_TILE_ID = 919;
 
 const TILE_AREA_SIZE = 0xFF;
@@ -43,17 +44,174 @@ function getRandomBetween(min, max) {
 
 }
 
+function randomPebble() {
+
+  var value = Math.random();
+
+  switch(true) {
+    case (value < 0.05):
+      return getRandomBetween(3648, 3652);
+    case (value < 0.25):
+      return getRandomBetween(3611, 3614);
+    default:
+      return getRandomBetween(3653, 3656);
+  }
+
+}
+
 function randomTree() {
 
   /* FUNCTION randomTree
    * Returns a random shrub or tree
    */
 
+  const BLUEBERRY_BUSH = 2785;
+
+  var value = Math.random();
+
   // Shrubs or trees
-  if(Math.random() < 0.25) {
-    return getRandomBetween(2700, 2708);
-  } else {
-    return getRandomBetween(2767, 2768);
+  switch(true) {
+    case (value < 0.10):
+      return getRandomBetween(2700, 2708);
+    case (value < 0.30):
+      return getRandomBetween(2767, 2768);
+    case (value < 0.95):
+      return getRandomBetween(6216, 6219);
+    case (value < 0.96):
+      return BLUEBERRY_BUSH;
+    default:
+      if(Math.random() < 0.5) {
+        return randomFlower();
+      } else {
+        return randomFlower2();
+      }
+  }
+
+}
+
+function randomPalmTree(neighbours) {
+
+  /* FUNCTION randomWaterPlant
+   * Returns a random water plant
+   */
+
+  const PALM_TREE = 2725;
+  const COCONUT_PALM_TREE = 2726;
+
+  if(Math.random() < 0.1) {
+    return [getRandomBetween(2725, 2726)];
+  }
+
+  return new Array();
+
+}
+
+function randomWaterPlant(neighbours) {
+
+  /* FUNCTION randomWaterPlant
+   * Returns a random water plant
+   */
+
+  const SWAMP_PLANT_START = 2771;
+  const SWAMP_PLANT_END = 2780;
+  const WATER_LILY_START = 2755;
+  const WATER_LILY_END = 2758;
+
+  var nNeighbours = countNeighbours(neighbours, GRASS_TILE_ID);
+
+  // "Swamp" plants
+  if(nNeighbours > 2 && Math.random() < 0.2) {
+    return [getRandomBetween(SWAMP_PLANT_START, SWAMP_PLANT_END)];
+  }
+
+  // Water lillies
+  if(nNeighbours > 1 && Math.random() < 0.1) {
+    return [getRandomBetween(WATER_LILY_START, WATER_LILY_END)];
+  }
+
+  return new Array();
+
+}
+
+function countNeighbours(neighbours, id) {
+
+  /* FUNCTION countNeighbours
+   * Counts the number of neighbours with particular ID
+   */
+
+  return Object.keys(neighbours).filter(function(x) {
+    return neighbours[x] === id;
+  }).length;
+
+}
+
+function randomFlower2() {
+
+  /* FUNCTION countNeighbours
+   * Return a random flower with different flower
+   */
+
+  return getRandomBetween(4152, 4158);
+
+}
+
+function randomShell() {
+
+  const SHELL = 5679;
+  const SPIRAL_SHELL = 5680;
+  const SOME_SHELLS = 5681;
+  const PIECE_OF_SHELL = 5682;
+  const TORTOISE_EGGS = 5677;
+
+  var weights = [
+    {"id": SHELL, "weight": 0.3},
+    {"id": SPIRAL_SHELL, "weight": 0.30},
+    {"id": PIECE_OF_SHELL, "weight": 0.30},
+    {"id": SOME_SHELLS, "weight": 0.075},
+    {"id": TORTOISE_EGGS, "weight": 0.025}
+  ];
+
+  return getWeightedRandom(weights);
+
+}
+
+function randomFlower() {
+
+  /* FUNCTION randomFlower
+   * Return a random flower with different weights
+   */
+
+  const MOON_FLOWERS = 2740;
+  const MOON_FLOWER = 2741;
+  const WHITE_FLOWER = 2742;
+  const HEAVEN_BLOSSOM = 2743;
+
+  var weights = [
+    {"id": MOON_FLOWER, "weight": 0.5},
+    {"id": MOON_FLOWERS, "weight": 0.20},
+    {"id": WHITE_FLOWER, "weight": 0.20},
+    {"id": HEAVEN_BLOSSOM, "weight": 0.10}
+  ];
+
+  return getWeightedRandom(weights);
+
+}
+
+function getWeightedRandom(weights) {
+
+  /* FUNCTION getWeightedRandom
+   * Return a random element based on a weight
+   */
+
+  // Draw a random sample
+  var value = Math.random();
+  var sum = 0;
+
+  for(var i = 0; i < weights.length; i++) {
+    sum += weights[i].weight;
+    if(value < sum) {
+      return weights[i].id;
+    }
   }
 
 }
@@ -68,7 +226,7 @@ function createLayer() {
 
 }
 
-function mapElevation(z) {
+function mapElevation(z, b) {
 
   /* FUNCTION mapElevation 
    * Maps particular elevation to tile id 
@@ -80,7 +238,11 @@ function mapElevation(z) {
     case (z > 3):
       return STONE_TILE_ID;
     default:
-      return GRASS_TILE_ID;
+      if(b < -1.5) {
+        return SAND_TILE_ID;
+      } else {
+        return GRASS_TILE_ID;
+      }
   }
 
 }
@@ -92,6 +254,9 @@ function generateMapLayers() {
    * Layers are later converted to area tiles for OTBM2JSON
    */
 
+  const SMOOTH_COASTLINE = true;
+  const SAND_BIOME = true;
+
   var z, id;
 
   // Seed the noise function
@@ -100,13 +265,17 @@ function generateMapLayers() {
   // Create 8 zero filled layers
   var layers = new Array(8).fill(0).map(createLayer);
 
+  console.log("Creating map layers.");
+
   // Loop over the requested map width and height
   for(var y = 0; y < MAP.HEIGHT; y++) {
     for(var x = 0; x < MAP.WIDTH; x++) {
   
       // Get the elevation
       z = zNoiseFunction(x, y);
-      id = mapElevation(z);
+      b = SAND_BIOME ? 5 * zNoiseFunction(y, x) : 0;
+
+      id = mapElevation(z, b);
 
       // Clamp the value
       z = Math.max(Math.min(z, 7), 0);
@@ -117,7 +286,91 @@ function generateMapLayers() {
     }
   }
 
+  // Option to smooth coast line
+  if(SMOOTH_COASTLINE) {
+    layers = smoothCoastline(layers);
+  }
+
   return layers;
+
+}
+
+function smoothCoastline(layers) {
+
+  /* FUNCTION smoothCoastline
+   * Algorithm that smoothes the coast line
+   * to get rid of impossible water borders
+   */
+
+  var iterate = 1;
+  var c = 0;
+
+  // Constant iteration to remove impossible coastline tiles
+  while(iterate) {
+
+    iterate = 0;
+
+    layers = layers.map(function(layer, i) {
+
+      // Coastline only on the lowest floor
+      if(i !== 0) {
+        return layer;
+      }
+
+      return layer.map(function(x, i) {
+
+        // Skip anything that is not a grass tile
+        if(x !== GRASS_TILE_ID && x !== SAND_TILE_ID) {
+          return x;
+        }
+
+        // Get the coordinate and the neighbours
+        var coordinates = getCoordinates(i);
+        var neighbours = getAdjacentTiles(layer, coordinates);
+
+        // If the tile needs to be eroded, we will need to reiterate
+        if(tileShouldErode(neighbours)) {
+          x = WATER_TILE_ID;
+          iterate++;
+        }
+
+        return x;
+
+      });
+
+    });
+
+    console.log("Smoothing coastline <iteration " + c++ + ">" + " <" + iterate + " tiles eroded>");  
+
+  }
+
+  return layers;
+
+}
+
+function grassShouldSand(neighbours) {
+
+  return (
+    (neighbours.W === GRASS_TILE_ID && neighbours.NW === SAND_TILE_ID)
+  );
+
+}
+
+function tileShouldErode(neighbours) {
+
+  /* FUNCTION tileShouldErode
+   * Returns whether a tile should be eroded by the coastline
+   */
+
+  return (
+   (neighbours.N === WATER_TILE_ID && neighbours.S === WATER_TILE_ID) ||
+   ((neighbours.E !== WATER_TILE_ID || neighbours.S !== WATER_TILE_ID) && neighbours.NE === WATER_TILE_ID && neighbours.SW === WATER_TILE_ID) ||
+   ((neighbours.W !== WATER_TILE_ID || neighbours.N !== WATER_TILE_ID) && neighbours.SE === WATER_TILE_ID && neighbours.NW === WATER_TILE_ID) ||
+   (neighbours.N === WATER_TILE_ID && neighbours.E === WATER_TILE_ID && neighbours.S === WATER_TILE_ID) ||
+   (neighbours.E === WATER_TILE_ID && neighbours.S === WATER_TILE_ID && neighbours.W === WATER_TILE_ID) ||
+   (neighbours.S === WATER_TILE_ID && neighbours.W === WATER_TILE_ID && neighbours.N === WATER_TILE_ID) ||
+   (neighbours.W === WATER_TILE_ID && neighbours.N === WATER_TILE_ID && neighbours.E === WATER_TILE_ID)
+  );
 
 }
 
@@ -193,11 +446,12 @@ function zNoiseFunction(x, y) {
    */
 
   // Island parameters
-  const a = 0.05;
-  const b = 1.10;
-  const c = 1.10;
-  const e = 1.00;
-  const f = 16.0;
+  const a = 0.1;
+  const b = 2.00;
+  const c = 1.60;
+  const e = 2.00;
+  const f = 32.0;
+  const w = 3.00;
 
   // Scaled coordinates between -0.5 and 0.5
   var nx = x / (MAP.WIDTH - 1) - 0.5;
@@ -213,18 +467,40 @@ function zNoiseFunction(x, y) {
   // Noise frequencies and weights
   var noise = (
     simplex2freq(1, 1.00, nx, ny) + 
-    simplex2freq(2, 0.75, nx, ny) +
+    simplex2freq(2, 0.5, nx, ny) +
     simplex2freq(4, 0.5, nx, ny) +
     simplex2freq(8, 0.5, nx, ny) +
     simplex2freq(16, 0.25, nx, ny) +
     simplex2freq(32, 0.1, nx, ny)
-  ) / (1.00 + 0.75 + 0.5 + 0.25 + 0.25 + 0.1);
+  ) / (1.00 + 0.5 +  0.5 + 0.25 + 0.25 + 0.1);
 
   // Some exponent for mountains?
   noise = Math.pow(noise, e);
 
   // Use distance from center to create an island
-  return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - 1;
+  return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - (w | 0);
+
+}
+
+function randomCactus() {
+
+  const CACTUS_START = 2728;
+  const CACTUS_END = 2736;
+
+  return getRandomBetween(CACTUS_START, CACTUS_END);
+
+}
+
+function randomTileMoss() {
+
+  /* FUNCTION randomTileMoss
+   * Returns a random moss tile for stone tiles
+   */
+
+  const MOSS_TILE_START = 4580;
+  const MOSS_TILE_END = 4594;
+
+  return getRandomBetween(MOSS_TILE_START, MOSS_TILE_END);
 
 }
 
@@ -281,9 +557,10 @@ function simplex2freq(f, weight, nx, ny) {
    */
 
   // Scale the frequency to the map size
-  f = f * MAP.WIDTH / TILE_AREA_SIZE;
+  fWidth = f * MAP.WIDTH / TILE_AREA_SIZE;
+  fHeight = f * MAP.HEIGHT / TILE_AREA_SIZE;
 
-  return weight * noise.simplex2(f * nx, f * ny);
+  return weight * noise.simplex2(fWidth * nx, fHeight * ny);
 
 }
 
@@ -306,6 +583,8 @@ function generateTileAreas(layers) {
    * Converts layers to OTBM tile areas
    */
 
+  console.log("Creating OTBM tile areas and adding clutter.");
+
   // Create hashmap for the tile areas
   var tileAreas = new Object();
 
@@ -314,11 +593,6 @@ function generateTileAreas(layers) {
   
     // For all tiles on each layer
     layer.forEach(function(x, i) {
-  
-      // The tile identifier is NULL: skip
-      if(x === 0) {
-        return;
-      }
 
       // Transform layer index to x, y coordinates
       var coordinates = getCoordinates(i);  
@@ -351,8 +625,13 @@ function generateTileAreas(layers) {
       var neighbours = getAdjacentTiles(layer, coordinates);
   
       // Mountain tile: border outside 
-      if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
+      if(x !== MOUNTAIN_TILE_ID) {
         items = items.concat(border.getMountainWallOuter(neighbours).map(createOTBMItem));
+      }
+
+      // Empty tiles can be skipped now
+      if(x === 0) {
+        return;
       }
 
       // Mountain tile: border inside  
@@ -360,30 +639,62 @@ function generateTileAreas(layers) {
         items = items.concat(border.getMountainWall(neighbours).map(createOTBMItem));
       }
 
+      n = (simplex2freq(8, 3, coordinates.x, coordinates.y) + simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y)) / 4;
+
       // Crappy noise map to put forests (FIXME)
       // Check if the tile is occupied
       if(!items.length && x === GRASS_TILE_ID) {
-        n = (simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y));
-        if(n > 0.15) {
+        if(n > 0) {
           items.push(createOTBMItem(randomTree()));
         }
       }
 
-      // Border at foot of mountain
-      if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
-        items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
+      // Add a random water plant
+      if(!items.length && x === WATER_TILE_ID) {
+        items.push(createOTBMItem(randomWaterPlant(neighbours)));
       }
-  
-      // Border on top of mountain
-      if(x === GRASS_TILE_ID || x === STONE_TILE_ID) {
-        items = items.concat(border.getFloatingBorder(neighbours).map(createOTBMItem));
+
+      if(!items.length && x === SAND_TILE_ID) {
+        if(n > 0 && Math.random() < 0.5) {
+          items.push(createOTBMItem(randomPebble()));
+        } else if(n > 0.33 && Math.random() < 0.5) {
+          items.push(createOTBMItem(randomCactus()));
+        } else if(Math.random() < 0.75) {
+          items.push(createOTBMItem(randomPalmTree(neighbours)));
+         } else if(z === 0 && Math.random() < 0.25) {
+          items.push(createOTBMItem(randomShell()));
+         }
+       }
+
+      // Add a random water plant
+      if(x === STONE_TILE_ID) {
+        if(n > 0.25) {
+          items.push(createOTBMItem(randomTileMoss()));
+        }
+        if(n > 0 && Math.random() < 0.5) {
+          items.push(createOTBMItem(randomPebble()));
+        }
       }
-  
+
+      if(x === SAND_TILE_ID) {
+        items = items.concat(border.getWaterBorderSand(neighbours).map(createOTBMItem));
+      }
       // Border grass & water interface
       if(x === GRASS_TILE_ID) {
+        items = items.concat(border.getSandBorder(neighbours).map(createOTBMItem));
         items = items.concat(border.getWaterBorder(neighbours).map(createOTBMItem));
       }
-  
+
+      // Border on top of mountain
+      if(x === GRASS_TILE_ID || x === STONE_TILE_ID || x === SAND_TILE_ID) {
+        items = items.concat(border.getFloatingBorder(neighbours).map(createOTBMItem));
+      }
+
+      // Border at foot of mountain
+      if(x !== MOUNTAIN_TILE_ID) {
+        items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
+      }
+
       // Randomize the tile
       x = randomizeTile(x);
 
@@ -407,6 +718,10 @@ function generateTileAreas(layers) {
 
 if(require.main === module) {
 
+  var start = Date.now();
+
+  console.log("Creating map of size " + MAP.WIDTH + "x" + MAP.HEIGHT + " using seed " + MAP.SEED + ".");
+
   // Read default OTMapGen header
   var json = require("./json/header");
 
@@ -421,6 +736,8 @@ if(require.main === module) {
 
   // Write the map header
   setMapHeader(json.data);
+
+  console.log("Finished generation in " + (Date.now()  - start) + "ms. Writing output to map.otbm");
 
   // Write the JSON using the OTBM2JSON lib
   otbm2json.write("map.otbm", json);

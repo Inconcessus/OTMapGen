@@ -186,6 +186,7 @@ function tileShouldErode(neighbours) {
 
   return (
    (neighbours.N === ITEMS.WATER_TILE_ID && neighbours.S === ITEMS.WATER_TILE_ID) ||
+   (neighbours.E === ITEMS.WATER_TILE_ID && neighbours.W === ITEMS.WATER_TILE_ID) ||
    ((neighbours.E !== ITEMS.WATER_TILE_ID || neighbours.S !== ITEMS.WATER_TILE_ID) && neighbours.NE === ITEMS.WATER_TILE_ID && neighbours.SW === ITEMS.WATER_TILE_ID) ||
    ((neighbours.W !== ITEMS.WATER_TILE_ID || neighbours.N !== ITEMS.WATER_TILE_ID) && neighbours.SE === ITEMS.WATER_TILE_ID && neighbours.NW === ITEMS.WATER_TILE_ID) ||
    (neighbours.N === ITEMS.WATER_TILE_ID && neighbours.E === ITEMS.WATER_TILE_ID && neighbours.S === ITEMS.WATER_TILE_ID) ||

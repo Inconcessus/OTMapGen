@@ -423,16 +423,22 @@ function generateTileAreas(layers) {
         items.push(createOTBMItem(clutter.randomWaterPlant(countNeighbours(neighbours, ITEMS.GRASS_TILE_ID))));
       }
 
+      if(!items.length && (x === ITEMS.GRASS_TILE_ID || x === ITEMS.SAND_TILE_ID) && countNeighbours(neighbours, ITEMS.WATER_TILE_ID)) {
+        if(n > 0 && Math.random() < 0.075) {
+          items.push(createOTBMItem(clutter.randomSandstoneMossy()));
+        }
+      }
+
       if(!items.length && x === ITEMS.SAND_TILE_ID) {
-        if(n > 0 && Math.random() < 0.5 && countNeighbours(neighbours, ITEMS.WATER_TILE_ID) === 0) {
+        if(n > 0 && Math.random() < 0.25 && countNeighbours(neighbours, ITEMS.WATER_TILE_ID) === 0) {
           items.push(createOTBMItem(clutter.randomPebble()));
-        } else if(n > 0.33 && Math.random() < 0.5) {
+        } else if(n > 0.33 && Math.random() < 0.25) {
           items.push(createOTBMItem(clutter.randomCactus()));
-        } else if(Math.random() < 0.75) {
+        } else if(Math.random() < 0.45) {
           items.push(createOTBMItem(clutter.randomPalmTree(neighbours)));
-         } else if(z === 0 && Math.random() < 0.25) {
+         } else if(z === 0 && Math.random() < 0.075) {
           items.push(createOTBMItem(clutter.randomShell()));
-         } else if(Math.random() < 0.15 && countNeighbours(neighbours, ITEMS.WATER_TILE_ID) === 0) {
+         } else if(Math.random() < 0.015) {
           items.push(createOTBMItem(clutter.randomSandstone()));
          }
        }

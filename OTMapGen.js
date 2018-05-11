@@ -2,6 +2,7 @@ const otbm2json = require("./OTBM2JSON/otbm2json");
 const noise = require("./lib/noise").noise;
 const border = require("./lib/border");
 const clutter = require("./lib/clutter");
+const ITEMS = require("./json/items");
 
 const __VERSION__ = "0.2.0";
 
@@ -13,19 +14,12 @@ const MAP = {
     "EUCLIDEAN": true,
     "SMOOTH_COASTLINE": true,
     "WATER_LEVEL": 2.0,
-    "EXPONENT": 2.00,
-    "LINEAR": 32.0
+    "EXPONENT": 1.00,
+    "LINEAR": 8.0
   },
   "WIDTH": 255,
   "HEIGHT": 255
 }
-
-// Some global identifiers
-const WATER_TILE_ID = 4615;
-const GRASS_TILE_ID = 4526;
-const STONE_TILE_ID = 4405;
-const SAND_TILE_ID = 231;
-const MOUNTAIN_TILE_ID = 919;
 
 const TILE_AREA_SIZE = 0xFF;
 
@@ -73,14 +67,14 @@ function mapElevation(z, b) {
 
   switch(true) {
     case (z < 0):
-      return WATER_TILE_ID;
+      return ITEMS.WATER_TILE_ID;
     case (z > 3):
-      return STONE_TILE_ID;
+      return ITEMS.STONE_TILE_ID;
     default:
       if(b < -1.5) {
-        return SAND_TILE_ID;
+        return ITEMS.SAND_TILE_ID;
       } else {
-        return GRASS_TILE_ID;
+        return ITEMS.GRASS_TILE_ID;
       }
   }
 
@@ -156,7 +150,7 @@ function smoothCoastline(layers) {
       return layer.map(function(x, i) {
 
         // Skip anything that is not a grass tile
-        if(x !== GRASS_TILE_ID && x !== SAND_TILE_ID) {
+        if(x !== ITEMS.GRASS_TILE_ID && x !== ITEMS.SAND_TILE_ID) {
           return x;
         }
 
@@ -166,7 +160,7 @@ function smoothCoastline(layers) {
 
         // If the tile needs to be eroded, we will need to reiterate
         if(tileShouldErode(neighbours)) {
-          x = WATER_TILE_ID;
+          x = ITEMS.WATER_TILE_ID;
           iterate++;
         }
 
@@ -191,13 +185,13 @@ function tileShouldErode(neighbours) {
    */
 
   return (
-   (neighbours.N === WATER_TILE_ID && neighbours.S === WATER_TILE_ID) ||
-   ((neighbours.E !== WATER_TILE_ID || neighbours.S !== WATER_TILE_ID) && neighbours.NE === WATER_TILE_ID && neighbours.SW === WATER_TILE_ID) ||
-   ((neighbours.W !== WATER_TILE_ID || neighbours.N !== WATER_TILE_ID) && neighbours.SE === WATER_TILE_ID && neighbours.NW === WATER_TILE_ID) ||
-   (neighbours.N === WATER_TILE_ID && neighbours.E === WATER_TILE_ID && neighbours.S === WATER_TILE_ID) ||
-   (neighbours.E === WATER_TILE_ID && neighbours.S === WATER_TILE_ID && neighbours.W === WATER_TILE_ID) ||
-   (neighbours.S === WATER_TILE_ID && neighbours.W === WATER_TILE_ID && neighbours.N === WATER_TILE_ID) ||
-   (neighbours.W === WATER_TILE_ID && neighbours.N === WATER_TILE_ID && neighbours.E === WATER_TILE_ID)
+   (neighbours.N === ITEMS.WATER_TILE_ID && neighbours.S === ITEMS.WATER_TILE_ID) ||
+   ((neighbours.E !== ITEMS.WATER_TILE_ID || neighbours.S !== ITEMS.WATER_TILE_ID) && neighbours.NE === ITEMS.WATER_TILE_ID && neighbours.SW === ITEMS.WATER_TILE_ID) ||
+   ((neighbours.W !== ITEMS.WATER_TILE_ID || neighbours.N !== ITEMS.WATER_TILE_ID) && neighbours.SE === ITEMS.WATER_TILE_ID && neighbours.NW === ITEMS.WATER_TILE_ID) ||
+   (neighbours.N === ITEMS.WATER_TILE_ID && neighbours.E === ITEMS.WATER_TILE_ID && neighbours.S === ITEMS.WATER_TILE_ID) ||
+   (neighbours.E === ITEMS.WATER_TILE_ID && neighbours.S === ITEMS.WATER_TILE_ID && neighbours.W === ITEMS.WATER_TILE_ID) ||
+   (neighbours.S === ITEMS.WATER_TILE_ID && neighbours.W === ITEMS.WATER_TILE_ID && neighbours.N === ITEMS.WATER_TILE_ID) ||
+   (neighbours.W === ITEMS.WATER_TILE_ID && neighbours.N === ITEMS.WATER_TILE_ID && neighbours.E === ITEMS.WATER_TILE_ID)
   );
 
 }
@@ -216,7 +210,7 @@ function fillColumn(layers, x, y, z, id) {
 
   // Fill downwards with mountain
   for(var i = 0; i < z; i++) {
-    layers[i][index] = MOUNTAIN_TILE_ID;
+    layers[i][index] = ITEMS.MOUNTAIN_TILE_ID;
   }
 
 }
@@ -399,7 +393,7 @@ function generateTileAreas(layers) {
       var neighbours = getAdjacentTiles(layer, coordinates);
   
       // Mountain tile: border outside 
-      if(x !== MOUNTAIN_TILE_ID) {
+      if(x !== ITEMS.MOUNTAIN_TILE_ID) {
         items = items.concat(border.getMountainWallOuter(neighbours).map(createOTBMItem));
       }
 
@@ -409,7 +403,7 @@ function generateTileAreas(layers) {
       }
 
       // Mountain tile: border inside  
-      if(x === MOUNTAIN_TILE_ID) {
+      if(x === ITEMS.MOUNTAIN_TILE_ID) {
         items = items.concat(border.getMountainWall(neighbours).map(createOTBMItem));
       }
 
@@ -417,18 +411,18 @@ function generateTileAreas(layers) {
 
       // Crappy noise map to put forests (FIXME)
       // Check if the tile is occupied
-      if(!items.length && x === GRASS_TILE_ID) {
+      if(!items.length && x === ITEMS.GRASS_TILE_ID) {
         if(n > 0) {
           items.push(createOTBMItem(clutter.randomTree()));
         }
       }
 
       // Add a random water plant
-      if(!items.length && x === WATER_TILE_ID) {
-        items.push(createOTBMItem(clutter.randomWaterPlant(countNeighbours(neighbours, GRASS_TILE_ID))));
+      if(!items.length && x === ITEMS.WATER_TILE_ID) {
+        items.push(createOTBMItem(clutter.randomWaterPlant(countNeighbours(neighbours, ITEMS.GRASS_TILE_ID))));
       }
 
-      if(!items.length && x === SAND_TILE_ID) {
+      if(!items.length && x === ITEMS.SAND_TILE_ID) {
         if(n > 0 && Math.random() < 0.5) {
           items.push(createOTBMItem(clutter.randomPebble()));
         } else if(n > 0.33 && Math.random() < 0.5) {
@@ -441,7 +435,7 @@ function generateTileAreas(layers) {
        }
 
       // Add a random water plant
-      if(x === STONE_TILE_ID) {
+      if(x === ITEMS.STONE_TILE_ID) {
         if(n > 0.25) {
           items.push(createOTBMItem(clutter.randomTileMoss()));
         }
@@ -450,22 +444,22 @@ function generateTileAreas(layers) {
         }
       }
 
-      if(x === SAND_TILE_ID) {
+      if(x === ITEMS.SAND_TILE_ID) {
         items = items.concat(border.getWaterBorderSand(neighbours).map(createOTBMItem));
       }
       // Border grass & water interface
-      if(x === GRASS_TILE_ID) {
+      if(x === ITEMS.GRASS_TILE_ID) {
         items = items.concat(border.getSandBorder(neighbours).map(createOTBMItem));
         items = items.concat(border.getWaterBorder(neighbours).map(createOTBMItem));
       }
 
       // Border on top of mountain
-      if(x === GRASS_TILE_ID || x === STONE_TILE_ID || x === SAND_TILE_ID) {
+      if(x === ITEMS.GRASS_TILE_ID || x === ITEMS.STONE_TILE_ID || x === ITEMS.SAND_TILE_ID) {
         items = items.concat(border.getFloatingBorder(neighbours).map(createOTBMItem));
       }
 
       // Border at foot of mountain
-      if(x !== MOUNTAIN_TILE_ID) {
+      if(x !== ITEMS.MOUNTAIN_TILE_ID) {
         items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
       }
 

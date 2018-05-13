@@ -9,16 +9,24 @@ const __VERSION__ = "0.2.0";
 // Configuration
 const MAP = {
   "SEED": 0,
+  "TERRAIN_ONLY": false,
   "GENERATION": {
+    "A": 0.05,
+    "B": 2.00,
+    "C": 2.00,
+    "CAVE_DEPTH": 12,
+    "CAVE_ROUGHNESS": 0.45,
+    "CAVE_CHANCE": 0.005,
     "SAND_BIOME": true,
     "EUCLIDEAN": true,
     "SMOOTH_COASTLINE": true,
-    "WATER_LEVEL": 2.0,
+    "ADD_CAVES": true,
+    "WATER_LEVEL": 0.0,
     "EXPONENT": 1.00,
     "LINEAR": 8.0
   },
-  "WIDTH": 255,
-  "HEIGHT": 255
+  "WIDTH": 512,
+  "HEIGHT": 512
 }
 
 const TILE_AREA_SIZE = 0xFF;
@@ -34,6 +42,14 @@ function setMapHeader(data) {
 
   // Save the time & seed
   data.nodes[0].description += new Date().toISOString() + " (" + MAP.SEED + ")";
+
+}
+
+function countNeighboursNegative(neighbours, id) {
+
+  return Object.keys(neighbours).filter(function(x) {
+    return neighbours[x] !== ITEMS.GRAVEL_TILE_ID && neighbours[x] !== id;
+  }).length;
 
 }
 
@@ -121,7 +137,88 @@ function generateMapLayers() {
     layers = smoothCoastline(layers);
   }
 
+  if(MAP.GENERATION.ADD_CAVES) {
+    layers = digCaves(layers);
+  }
+
   return layers;
+
+}
+
+function digCaves(layers) {
+
+  /* FUNCTION digCaves
+   * Slow and pretty crappy algorithm to dig caves (FIXME)
+   */
+
+  // Keep a reference to cave entrances
+  var entrances = new Array();
+
+  for(var k = 0; k < MAP.GENERATION.CAVE_DEPTH; k++) { 
+
+    console.log("Eroding caves <iteration " + k + ">");
+
+    layers = layers.map(function(layer, z) {
+    
+      return layer.map(function(x, i) {
+    
+        if(x !== ITEMS.MOUNTAIN_TILE_ID) {
+          return x;
+        }
+    
+        var coordinates = getCoordinates(i);
+        var neighbours = getAdjacentTiles(layer, coordinates);
+    
+        if(countNeighbours(neighbours, ITEMS.GRAVEL_TILE_ID) > 0 && countNeighboursNegative(neighbours, ITEMS.MOUNTAIN_TILE_ID) === 0 && Math.random() < MAP.GENERATION.CAVE_ROUGHNESS) {
+          return ITEMS.GRAVEL_TILE_ID;
+        }
+
+        // Get neighbouring neighbours ;)
+        var NL = getAdjacentTiles(layer, {"x": coordinates.x - 1, "y": coordinates.y});
+        var NR = getAdjacentTiles(layer, {"x": coordinates.x + 1, "y": coordinates.y});
+        var NN = getAdjacentTiles(layer, {"x": coordinates.x, "y": coordinates.y - 1});
+        var NS = getAdjacentTiles(layer, {"x": coordinates.x, "y": coordinates.y + 1});
+    
+        if(Math.random() < MAP.GENERATION.CAVE_CHANCE && NR.E === ITEMS.MOUNTAIN_TILE_ID && NL.W === ITEMS.MOUNTAIN_TILE_ID && x === ITEMS.MOUNTAIN_TILE_ID && countNeighbours(neighbours, ITEMS.MOUNTAIN_TILE_ID) === 5 && neighbours.W === ITEMS.MOUNTAIN_TILE_ID && neighbours.E === ITEMS.MOUNTAIN_TILE_ID) {
+          entrances.push({"z": z, "c": coordinates});
+          return ITEMS.GRAVEL_TILE_ID;
+        } else if(Math.random() < MAP.GENERATION.CAVE_CHANCE && NS.S === ITEMS.MOUNTAIN_TILE_ID && NN.N === ITEMS.MOUNTAIN_TILE_ID && x === ITEMS.MOUNTAIN_TILE_ID && countNeighbours(neighbours, ITEMS.MOUNTAIN_TILE_ID) === 5 && neighbours.S === ITEMS.MOUNTAIN_TILE_ID && neighbours.N === ITEMS.MOUNTAIN_TILE_ID) {
+          entrances.push({"z": z, "c": coordinates});
+          return ITEMS.GRAVEL_TILE_ID;
+        }
+    
+        return x;
+    
+      });
+    
+    });
+
+  }
+
+  // Open 3x3 around the cave entrance
+  entrances.forEach(function(x) {
+    fillNeighbours(layers[x.z], x.c, ITEMS.GRAVEL_TILE_ID);
+  });
+
+  return layers;
+
+}
+
+function fillNeighbours(layer, coordinates, id) {
+
+  /* FUNCTION fillNeighbours
+   * Fills all neighbouring tiles with particular ID
+   */
+
+  layer[getIndex(coordinates.x - 1, coordinates.y)] = id;
+  layer[getIndex(coordinates.x + 1, coordinates.y)] = id;
+  layer[getIndex(coordinates.x, coordinates.y - 1)] = id;
+  layer[getIndex(coordinates.x, coordinates.y + 1)] = id;
+
+  layer[getIndex(coordinates.x + 1, coordinates.y + 1)] = id;
+  layer[getIndex(coordinates.x + 1, coordinates.y - 1)] = id;
+  layer[getIndex(coordinates.x - 1, coordinates.y + 1)] = id;
+  layer[getIndex(coordinates.x - 1, coordinates.y - 1)] = id;
 
 }
 
@@ -216,6 +313,10 @@ function fillColumn(layers, x, y, z, id) {
 
 }
 
+function arch() {
+
+}
+
 function getIndex(x, y) {
 
   /* FUNCTION getIndex
@@ -269,9 +370,9 @@ function zNoiseFunction(x, y) {
    */
 
   // Island parameters
-  const a = 0.1;
-  const b = 2.00;
-  const c = 1.60;
+  const a = MAP.GENERATION.A;
+  const b = MAP.GENERATION.B;
+  const c = MAP.GENERATION.C;
   const e = MAP.GENERATION.EXPONENT;
   const f = MAP.GENERATION.LINEAR;
   const w = MAP.GENERATION.WATER_LEVEL;
@@ -292,10 +393,9 @@ function zNoiseFunction(x, y) {
     simplex2freq(1, 1.00, nx, ny) + 
     simplex2freq(2, 0.5, nx, ny) +
     simplex2freq(4, 0.5, nx, ny) +
-    simplex2freq(8, 0.5, nx, ny) +
     simplex2freq(16, 0.25, nx, ny) +
     simplex2freq(32, 0.1, nx, ny)
-  ) / (1.00 + 0.5 +  0.5 + 0.25 + 0.25 + 0.1);
+  ) / (1.00 + 0.5 +  0.5 + 0.25 + 0.1);
 
   // Some exponent for mountains?
   noise = Math.pow(noise, e);
@@ -390,86 +490,98 @@ function generateTileAreas(layers) {
       // Items to be placed on a tile (e.g. borders)
       var items = new Array();
 
-      // Get the tile neighbours and determine bordering logic
-      var neighbours = getAdjacentTiles(layer, coordinates);
-  
-      // Mountain tile: border outside 
-      if(x !== ITEMS.MOUNTAIN_TILE_ID) {
-        items = items.concat(border.getMountainWallOuter(neighbours).map(createOTBMItem));
-      }
+      if(!MAP.TERRAIN_ONLY) {
 
-      // Empty tiles can be skipped now
-      if(x === 0) {
-        return;
-      }
-
-      // Mountain tile: border inside  
-      if(x === ITEMS.MOUNTAIN_TILE_ID) {
-        items = items.concat(border.getMountainWall(neighbours).map(createOTBMItem));
-      }
-
-      n = (simplex2freq(8, 3, coordinates.x, coordinates.y) + simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y)) / 4;
-
-      // Crappy noise map to put forests (FIXME)
-      // Check if the tile is occupied
-      if(!items.length && x === ITEMS.GRASS_TILE_ID) {
-        if(n > 0) {
-          items.push(createOTBMItem(clutter.randomTree()));
+        // Get the tile neighbours and determine bordering logic
+        var neighbours = getAdjacentTiles(layer, coordinates);
+        
+        // Mountain tile: border outside 
+        if(!items.length && x !== ITEMS.MOUNTAIN_TILE_ID) {
+          items = items.concat(border.getMountainWallOuter(neighbours).map(createOTBMItem));
         }
-      }
-
-      // Add a random water plant
-      if(!items.length && x === ITEMS.WATER_TILE_ID) {
-        items.push(createOTBMItem(clutter.randomWaterPlant(countNeighbours(neighbours, ITEMS.GRASS_TILE_ID))));
-      }
-
-      if(!items.length && (x === ITEMS.GRASS_TILE_ID || x === ITEMS.SAND_TILE_ID) && countNeighbours(neighbours, ITEMS.WATER_TILE_ID)) {
-        if(n > 0 && Math.random() < 0.075) {
-          items.push(createOTBMItem(clutter.randomSandstoneMossy()));
+        
+        // Empty tiles can be skipped now
+        if(x === 0) {
+          return;
         }
-      }
-
-      if(!items.length && x === ITEMS.SAND_TILE_ID) {
-        if(n > 0 && Math.random() < 0.25 && countNeighbours(neighbours, ITEMS.WATER_TILE_ID) === 0) {
-          items.push(createOTBMItem(clutter.randomPebble()));
-        } else if(n > 0.33 && Math.random() < 0.25) {
-          items.push(createOTBMItem(clutter.randomCactus()));
-        } else if(Math.random() < 0.45) {
-          items.push(createOTBMItem(clutter.randomPalmTree(neighbours)));
-         } else if(z === 0 && Math.random() < 0.075) {
-          items.push(createOTBMItem(clutter.randomShell()));
-         } else if(Math.random() < 0.015) {
-          items.push(createOTBMItem(clutter.randomSandstone()));
+        
+        // Mountain tile: border inside  
+        if(!items.length && x === ITEMS.MOUNTAIN_TILE_ID) {
+          items = items.concat(border.getMountainWall(neighbours).map(createOTBMItem));
+        }
+        
+        n = (simplex2freq(8, 3, coordinates.x, coordinates.y) + simplex2freq(16, 0.5, coordinates.x, coordinates.y) + simplex2freq(32, 0.5, coordinates.x, coordinates.y)) / 4;
+        
+        // Crappy noise map to put forests (FIXME)
+        // Check if the tile is occupied
+        if(!items.length && x === ITEMS.GRASS_TILE_ID) {
+          if(n > 0) {
+            items.push(createOTBMItem(clutter.randomTree()));
+          }
+        }
+        
+        // Add a random water plant
+        if(!items.length && x === ITEMS.WATER_TILE_ID) {
+          items.push(createOTBMItem(clutter.randomWaterPlant(countNeighbours(neighbours, ITEMS.GRASS_TILE_ID))));
+        }
+        
+        if(!items.length && (x === ITEMS.GRASS_TILE_ID || x === ITEMS.SAND_TILE_ID) && countNeighbours(neighbours, ITEMS.WATER_TILE_ID)) {
+          if(n > 0 && Math.random() < 0.075) {
+            items.push(createOTBMItem(clutter.randomSandstoneMossy()));
+          }
+        }
+        
+        if(!items.length && x === ITEMS.SAND_TILE_ID) {
+          if(n > 0 && Math.random() < 0.25 && countNeighbours(neighbours, ITEMS.WATER_TILE_ID) === 0) {
+            items.push(createOTBMItem(clutter.randomPebble()));
+          } else if(n > 0.33 && Math.random() < 0.25) {
+            items.push(createOTBMItem(clutter.randomCactus()));
+          } else if(Math.random() < 0.45) {
+            items.push(createOTBMItem(clutter.randomPalmTree(neighbours)));
+           } else if(z === 0 && Math.random() < 0.075) {
+            items.push(createOTBMItem(clutter.randomShell()));
+           } else if(Math.random() < 0.015) {
+            items.push(createOTBMItem(clutter.randomSandstone()));
+           }
          }
-       }
-
-      // Add a random water plant
-      if(x === ITEMS.STONE_TILE_ID) {
-        if(n > 0.25) {
-          items.push(createOTBMItem(clutter.randomTileMoss()));
+        
+        // Add a random water plant
+        if(x === ITEMS.STONE_TILE_ID) {
+          if(n > 0.25) {
+            items.push(createOTBMItem(clutter.randomTileMoss()));
+          }
+          if(n > 0 && Math.random() < 0.5) {
+            items.push(createOTBMItem(clutter.randomPebble()));
+          }
         }
-        if(n > 0 && Math.random() < 0.5) {
-          items.push(createOTBMItem(clutter.randomPebble()));
+
+        if(x === ITEMS.GRAVEL_TILE_ID) {
+          items = items.concat(border.getGrassBorder(neighbours).map(createOTBMItem));
         }
-      }
+        
+        if(x === ITEMS.SAND_TILE_ID) {
+          items = items.concat(border.getWaterBorderSand(neighbours).map(createOTBMItem));
+        }
+        
+        if(x === ITEMS.GRAVEL_TILE_ID || x === ITEMS.GRASS_TILE_ID) {
+          items = items.concat(border.getSandBorder(neighbours).map(createOTBMItem));
+        }
+        
+        // Border grass & water interface
+        if(x === ITEMS.GRASS_TILE_ID) {
+          items = items.concat(border.getWaterBorder(neighbours).map(createOTBMItem));
+        }
+        
+        // Border on top of mountain
+        if(x === ITEMS.GRASS_TILE_ID || x === ITEMS.STONE_TILE_ID || x === ITEMS.SAND_TILE_ID) {
+          items = items.concat(border.getFloatingBorder(neighbours).map(createOTBMItem));
+        }
+        
+        // Border at foot of mountain
+        if(x !== ITEMS.MOUNTAIN_TILE_ID) {
+          items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
+        }
 
-      if(x === ITEMS.SAND_TILE_ID) {
-        items = items.concat(border.getWaterBorderSand(neighbours).map(createOTBMItem));
-      }
-      // Border grass & water interface
-      if(x === ITEMS.GRASS_TILE_ID) {
-        items = items.concat(border.getSandBorder(neighbours).map(createOTBMItem));
-        items = items.concat(border.getWaterBorder(neighbours).map(createOTBMItem));
-      }
-
-      // Border on top of mountain
-      if(x === ITEMS.GRASS_TILE_ID || x === ITEMS.STONE_TILE_ID || x === ITEMS.SAND_TILE_ID) {
-        items = items.concat(border.getFloatingBorder(neighbours).map(createOTBMItem));
-      }
-
-      // Border at foot of mountain
-      if(x !== ITEMS.MOUNTAIN_TILE_ID) {
-        items = items.concat(border.getMountainBorder(neighbours).map(createOTBMItem));
       }
 
       // Randomize the tile

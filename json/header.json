@@ -1,21 +1,21 @@
 {
-	"version": "0.3.0",
-	"identifier": 0,
-	"data": {
-		"type": "OTBM_MAP_HEADER",
-		"version": 2,
-		"mapWidth": 0,
-		"mapHeight": 0,
-		"itemsMajorVersion": 3,
-		"itemsMinorVersion": 57,
-		"nodes": [{
-			"type": "OTBM_MAP_DATA",
-			"description": "Saved with OTMapGen at ",
-			"features": [{
-				"type": "OTBM_TOWNS"
-			}, {
-				"type": "OTBM_WAYPOINTS"
-			}]
-		}]
-	}
+        "version": "1.0.0",
+        "identifier": 0,
+        "data": {
+                "type": 0,
+                "version": 2,
+                "mapWidth": 0,
+                "mapHeight": 0,
+                "itemsMajorVersion": 3,
+                "itemsMinorVersion": 57,
+                "nodes": [{
+                        "type": 2,
+                        "description": "Saved with OTMapGen at ",
+                        "features": [{
+                                "type": 12
+                        }, {
+                                "type": 15
+                        }]
+                }]
+        }
 }

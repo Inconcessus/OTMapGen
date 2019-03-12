@@ -1,3 +1,5 @@
 *.otbm
+*.swp
 OTBM2JSON
 bundle.js
+*.xml

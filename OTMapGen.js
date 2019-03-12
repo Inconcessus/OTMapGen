@@ -6,7 +6,7 @@ const clutter = require("./lib/clutter");
 const ITEMS = require("./json/items");
 const VERSIONS = require("./json/versions");
 
-const __VERSION__ = "1.2.0";
+const __VERSION__ = "1.3.0";
 
 var OTMapGenerator = function() {
 
@@ -15,8 +15,8 @@ var OTMapGenerator = function() {
    */
 
   // Check OTBM2JSON version
-  if(otbm2json.__VERSION__ !== "1.0.0") {
-    console.log("Incompatible version of otbm2json; please update.");
+  if(otbm2json.__VERSION__.split(".").shift() !== "1") {
+    return console.log("Incompatible version of otbm2json; please update.");
   }
 
   // Constant size of RME tile area (255x255)
@@ -203,7 +203,7 @@ OTMapGenerator.prototype.generate = function(configuration) {
   // Write the map header
   this.setMapHeader(json.data);
 
-  // Write the JSON using the OTBM2JSON lib
+  // Serialize the JSON using the OTBM2JSON lib
   return otbm2json.serialize(json);
 
 }

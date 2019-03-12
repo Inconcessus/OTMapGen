@@ -1,8 +1,17 @@
-const otbm2json = require("./OTBM2JSON/otbm2json");
-const noise = require("./lib/noise").noise;
+// Native libs
 const fs = require("fs");
+
+// OTBM2JSON lib
+const otbm2json = require("./OTBM2JSON/otbm2json");
+
+//  Noise funcion
+const noise = require("./lib/noise").noise;
+
+// Supplementary functions
 const border = require("./lib/border");
 const clutter = require("./lib/clutter");
+
+// JSON constants
 const ITEMS = require("./json/items");
 const VERSIONS = require("./json/versions");
 
@@ -10,11 +19,12 @@ const __VERSION__ = "1.3.0";
 
 var OTMapGenerator = function() {
 
-  /* Class OTMapGenerator
+  /*
+   * Class OTMapGenerator
    * Container for the OTMapGenerator class
    */
 
-  // Check OTBM2JSON version
+  // Confirm the OTBM2JSON major version
   if(otbm2json.__VERSION__.split(".").shift() !== "1") {
     return console.log("Incompatible version of otbm2json; please update.");
   }
@@ -52,20 +62,59 @@ var OTMapGenerator = function() {
         {"f": 32, "weight": 0.05 },
         {"f": 64, "weight": 0.05 }
       ]
-    },
+    }
   }
 
 }
 
-OTMapGenerator.prototype.generateMinimap = function(configuration) {
+OTMapGenerator.prototype.createRGBALayer = function(layer) {
 
-  /* OTMapGenerator.generateMinimapmap
-   * Generates clamped UInt8 buffer with RGBA values to be sent to canvas
+  /*
+   * Function OTMapGenerator::createRGBALayer
+   * Creates a RGBA layer
    */
+
+  function getMinimapColor(id) {
+  
+    /*
+     * Function OTMapGenerator::createRGBALayer::getMinimapColor
+     * Maps tile identifier to minimap color
+     */
+  
+    // Color constants (Tibia)
+    const WATER_COLOR = 0x0148C2;
+    const GRASS_COLOR = 0x00FF00;
+    const SAND_COLOR = 0xFFCC99;
+    const MOUNTAIN_COLOR = 0x666666;
+    const GRAVEL_COLOR = 0x999999;
+    const SNOW_COLOR = 0xFFFFFF;
+  
+    // Map tile to minimap color
+    // default to black
+    switch(id) {
+      case ITEMS.WATER_TILE_ID:
+        return WATER_COLOR;
+      case ITEMS.GRASS_TILE_ID:
+        return GRASS_COLOR;
+      case ITEMS.SAND_TILE_ID:
+        return SAND_COLOR;
+      case ITEMS.MOUNTAIN_TILE_ID:
+        return MOUNTAIN_COLOR;
+      case ITEMS.GRAVEL_TILE_ID:
+      case ITEMS.STONE_TILE_ID:
+        return GRAVEL_COLOR;
+      case ITEMS.SNOW_TILE_ID:
+        return SNOW_COLOR;
+      default:
+        return 0x000000;
+    }
+  
+  }
 
   function shouldOutline(layer, j, width) {
 
-    /* function shouldOutline
+    /*
+     * Function OTMapGenerator::createRGBALayer::shouldOutline
      * Determines whether the pixel is an outline by checking
      * is any of the 8 neighbouring pixels is filled
      */
@@ -85,50 +134,57 @@ OTMapGenerator.prototype.generateMinimap = function(configuration) {
 
   const OUTLINE_COLOR = 0x80;
 
-  var color, byteArray;
+  // Image will occupy four bytes per tile (pixel; RGBA)
+  var byteArray = new Uint8ClampedArray(4 * this.CONFIGURATION.WIDTH * this.CONFIGURATION.HEIGHT);
+
+  layer.forEach(function(value, i) {
+    
+    // Indices per color
+    var R = 4 * i;
+    var G = R + 1;
+    var B = G + 1;
+    var A = B + 1;
+
+    // Set alpha value to 0xFF
+    byteArray[A] = 0xFF;
+
+    // No tile: skip or outline
+    if(value === 0) {
+      if(shouldOutline(layer, i, this.CONFIGURATION.WIDTH)) {
+        byteArray[R] = OUTLINE_COLOR;
+        byteArray[G] = OUTLINE_COLOR;
+        byteArray[B] = OUTLINE_COLOR;
+      }
+      return;
+    }
+
+    // Color is the 6 byte hex RGB representation
+    hexColor = getMinimapColor(value);
+
+    // Bitshift to extract component and write RGBA in the buffer (always 0xFF for A)
+    byteArray[R] = (hexColor >> 16) & 0xFF;
+    byteArray[G] = (hexColor >> 8) & 0xFF;
+    byteArray[B] = (hexColor >> 0) & 0xFF;
+
+  }, this);
+
+  return byteArray;
+
+}
+
+
+OTMapGenerator.prototype.generateMinimap = function(configuration) {
+
+  /*
+   * OTMapGenerator.generateMinimapmap
+   * Generates clamped UInt8 buffer with RGBA values to be sent to canvas
+   */
 
   // Set the configuration
   this.CONFIGURATION = configuration;
 
   // Create temporary layers
-  var layers = this.generateMapLayers();
-
-  var pngLayers = new Array();
-
-  // Only go over the base layer for now
-  for(var i = 0; i < layers.length; i++) {
-
-    // Create a buffer the size of w * h * 4 bytes
-    byteArray = new Uint8ClampedArray(4 * this.CONFIGURATION.WIDTH * this.CONFIGURATION.HEIGHT);
-
-    for(var j = 0; j < layers[i].length; j++) {
-
-      // Set alpha value to 0xFF
-      byteArray[4 * j + 3] = 0xFF;
-
-      // No tile: skip or outline
-      if(layers[i][j] === 0) {
-        if(shouldOutline(layers[i], j, this.CONFIGURATION.WIDTH)) {
-          byteArray[4 * j + 0] = OUTLINE_COLOR;
-          byteArray[4 * j + 1] = OUTLINE_COLOR;
-          byteArray[4 * j + 2] = OUTLINE_COLOR;
-        }
-        continue;
-      }
-
-      // Color is the 6 byte hex RGB representation
-      hexColor = this.getMinimapColor(layers[i][j]);
-
-      // Write RGBA in the buffer (always 0xFF for A)
-      byteArray[4 * j + 0] = (hexColor >> 16) & 0xFF;
-      byteArray[4 * j + 1] = (hexColor >> 8) & 0xFF;
-      byteArray[4 * j + 2] = (hexColor >> 0) & 0xFF;
-
-    }
-
-    pngLayers.push(byteArray);
-
-  }
+  var pngLayers = this.generateMapLayers().map(this.createRGBALayer, this);
 
   return {
     "data": pngLayers,
@@ -137,45 +193,10 @@ OTMapGenerator.prototype.generateMinimap = function(configuration) {
 
 }
 
-OTMapGenerator.prototype.getMinimapColor = function(id) {
-
-  /* OTMapGenerator.getMinimapColor
-   * Maps tile identifier to minimap color
-   */
-
-  // Color constants
-  const WATER_COLOR = 0x0148C2;
-  const GRASS_COLOR = 0x00FF00;
-  const SAND_COLOR = 0xFFCC99;
-  const MOUNTAIN_COLOR = 0x666666;
-  const GRAVEL_COLOR = 0x999999;
-  const SNOW_COLOR = 0xFFFFFF;
-
-  // Map tile to minimap color
-  // default to black
-  switch(id) {
-    case ITEMS.WATER_TILE_ID:
-      return WATER_COLOR;
-    case ITEMS.GRASS_TILE_ID:
-      return GRASS_COLOR;
-    case ITEMS.SAND_TILE_ID:
-      return SAND_COLOR;
-    case ITEMS.MOUNTAIN_TILE_ID:
-      return MOUNTAIN_COLOR;
-    case ITEMS.GRAVEL_TILE_ID:
-    case ITEMS.STONE_TILE_ID:
-      return GRAVEL_COLOR;
-    case ITEMS.SNOW_TILE_ID:
-      return SNOW_COLOR;
-    default:
-      return 0x000000;
-  }
-
-}
-
 OTMapGenerator.prototype.generate = function(configuration) {
 
-  /* FUNCTION OTMapGenerator.generate
+  /*
+   * Function OTMapGenerator.generate
    * Generates OTBM map and returns OTBMJSON representation
    */
 
@@ -210,12 +231,13 @@ OTMapGenerator.prototype.generate = function(configuration) {
 
 OTMapGenerator.prototype.setMapHeader = function(data) {
 
-  /* FUNCTION setMapHeader
+  /*
+   * Function OTMapGenerator::setMapHeader
    * Writes RME map header OTBM_MAP_DATA
    */
 
   if(!VERSIONS.hasOwnProperty(this.CONFIGURATION.VERSION)) {
-    throw("Map version not supported.");
+    throw("The requested map version is not supported.");
   }
 
   data.mapWidth = this.CONFIGURATION.WIDTH;
@@ -234,9 +256,10 @@ OTMapGenerator.prototype.setMapHeader = function(data) {
 
 OTMapGenerator.prototype.generateMapLayers = function() {
 
-  /* FUNCTION generateMapLayers
+  /*
+   * Function OTMapGenerator::generateMapLayers
    * Generates temporary layer with noise seeded tiles
-   * Layers are later converted to area tiles for OTBM2JSON
+   * The layers can be later converted to area tiles for OTBM2JSON
    */
 
   function createLayer() {
@@ -270,7 +293,7 @@ OTMapGenerator.prototype.generateMapLayers = function() {
       // Clamp the value
       z = Math.max(Math.min(z, 7), 0);
 
-      // Fill the column with tiles
+      // Fill the column with mountain tiles
       this.fillColumn(layers, x, y, z, id);
 
     }
@@ -281,6 +304,7 @@ OTMapGenerator.prototype.generateMapLayers = function() {
     layers = this.smoothCoastline(layers);
   }
 
+  // Options to add caves
   if(this.CONFIGURATION.GENERATION.ADD_CAVES) {
     layers = this.digCaves(layers);
   }
@@ -291,14 +315,13 @@ OTMapGenerator.prototype.generateMapLayers = function() {
 
 OTMapGenerator.prototype.smoothCoastline = function(layers) {
 
-  /* FUNCTION smoothCoastline
-   * Algorithm that smoothes the coast line
-   * to get rid of impossible water borders
+  /*
+   * Function OTMapGenerator::smoothCoastline
+   * Algorithm that smoothes the coast line to get rid of "impossible" water borders
    */
 
   var iterate = 1;
   var c = 0;
-  var self = this;
 
   // Constant iteration to remove impossible coastline tiles
   while(iterate) {
@@ -307,33 +330,32 @@ OTMapGenerator.prototype.smoothCoastline = function(layers) {
 
     layers = layers.map(function(layer, i) {
 
-      // Coastline only on the lowest floor
+      // Coastline is only on the lowest floor
       if(i !== 0) {
         return layer;
       }
 
       return layer.map(function(x, i) {
 
-        // Skip anything that is not a grass tile
+        // Skip anything that is not a grass or sand tile
         if(x !== ITEMS.GRASS_TILE_ID && x !== ITEMS.SAND_TILE_ID) {
           return x;
         }
 
         // Get the coordinate and the neighbours
-        var coordinates = self.getCoordinates(i);
-        var neighbours = self.getAdjacentTiles(layer, coordinates);
+        var neighbours = this.getAdjacentTiles(layer, this.getCoordinates(i));
 
-        // If the tile needs to be eroded, we will need to reiterate
-        if(self.tileShouldErode(neighbours)) {
+        // If the tile needs to be eroded, we are required to reiterate
+        if(this.tileShouldErode(neighbours)) {
           x = ITEMS.WATER_TILE_ID;
           iterate++;
         }
 
         return x;
 
-      });
+      }, this);
 
-    });
+    }, this);
 
     console.log("Smoothing coastline <iteration " + c++ + ">" + " <" + iterate + " tiles eroded>");
 
@@ -345,7 +367,8 @@ OTMapGenerator.prototype.smoothCoastline = function(layers) {
 
 OTMapGenerator.prototype.countNeighboursNegative = function(neighbours, id) {
 
-  /* FUNCTION countNeighboursNegative
+  /*
+   * Function OTMapGenerator::countNeighboursNegative
    * Counts the number of neighbours that do not have a particular ID 
    */
 
@@ -357,7 +380,8 @@ OTMapGenerator.prototype.countNeighboursNegative = function(neighbours, id) {
 
 OTMapGenerator.prototype.countNeighbours = function(neighbours, id) {
 
-  /* FUNCTION countNeighbours
+  /*
+   * Function OTMapGenerator::countNeighbours
    * Counts the number of neighbours with particular ID
    */
 
@@ -369,7 +393,8 @@ OTMapGenerator.prototype.countNeighbours = function(neighbours, id) {
 
 OTMapGenerator.prototype.mapElevation = function(z, b) {
 
-  /* FUNCTION mapElevation 
+  /*
+   * Function OTMapGenerator::mapElevation 
    * Maps particular elevation to tile id 
    */
 
@@ -394,7 +419,8 @@ OTMapGenerator.prototype.mapElevation = function(z, b) {
 
 OTMapGenerator.prototype.digCaves = function(layers) {
 
-  /* FUNCTION digCaves
+  /*
+   * Function OTMapGenerator::digCaves
    * Slow and pretty crappy algorithm to dig caves (FIXME)
    */
 
@@ -826,6 +852,7 @@ module.exports.__VERSION__ = __VERSION__;
 
 if(require.main === module) {
 
+  // Run from main
   fs.writeFileSync("map.otbm", module.exports.OTMapGenerator.generate());
 
 }

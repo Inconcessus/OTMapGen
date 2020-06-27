@@ -18,7 +18,7 @@ const VERSIONS = require("./json/versions")
 
 const __VERSION__ = "1.3.0"
 
-const mountainType = "MOUNTAIN"
+const mountainType = "EARTH_MOUNTAIN"
 
 var OTMapGenerator = function () {
   /*

@@ -837,7 +837,11 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
 
         // Border at foot of mountain
         if (x !== mountains[mountainType + "_TILE_ID"]) {
-          items.add(border.getMountainBorder(neighbours))
+          const borders = border.getMountainBorders(neighbours)
+
+          if (borders.length) {
+            borders.map((item) => items.add(item))
+          }
         }
 
         // Version filter remove anything below a certain ID

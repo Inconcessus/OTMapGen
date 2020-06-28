@@ -8,7 +8,8 @@ const otbm2json = require("./OTBM2JSON/otbm2json")
 const noise = require("./lib/noise").noise
 
 // Supplementary functions
-const border = require("./lib/border")
+const useBorders = require("./lib/border")
+
 const clutter = require("./lib/clutter")
 
 // JSON constants
@@ -17,8 +18,6 @@ const mountains = require("./json/items/mountains")
 const VERSIONS = require("./json/versions")
 
 const __VERSION__ = "1.3.0"
-
-const mountainType = "EARTH_MOUNTAIN"
 
 var OTMapGenerator = function () {
   /*
@@ -50,12 +49,12 @@ var OTMapGenerator = function () {
       CAVE_CHANCE: 0.025,
       SAND_BIOME: false,
       EUCLIDEAN: true,
-      SMOOTH_COASTLINE: true,
+      SMOOTH_COASTLINE: false,
       ADD_CAVES: true,
       WATER_LEVEL: 1.0,
       EXPONENT: 1.5,
       LINEAR: 9.0,
-      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
+      MOUNTAIN_TYPE: "MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.15 },
         { f: 2, weight: 0.25 },
@@ -98,7 +97,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
         return GRASS_COLOR
       case ITEMS.SAND_TILE_ID:
         return SAND_COLOR
-      case mountains[mountainType + "_TILE_ID"]:
+      case mountains[this.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]:
         return MOUNTAIN_COLOR
       case ITEMS.GRAVEL_TILE_ID:
       case ITEMS.STONE_TILE_ID:
@@ -413,7 +412,10 @@ OTMapGenerator.prototype.digCaves = function (layers) {
 
     layers = layers.map(function (layer, z) {
       return layer.map(function (x, i) {
-        if (x !== mountains[mountainType + "_TILE_ID"]) {
+        if (
+          x !==
+          mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
+        ) {
           return x
         }
 
@@ -424,7 +426,7 @@ OTMapGenerator.prototype.digCaves = function (layers) {
           self.countNeighbours(neighbours, ITEMS.GRAVEL_TILE_ID) > 0 &&
           self.countNeighboursNegative(
             neighbours,
-            mountains[mountainType + "_TILE_ID"]
+            mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
           ) === 0 &&
           Math.random() < self.CONFIGURATION.GENERATION.CAVE_ROUGHNESS
         ) {
@@ -451,29 +453,55 @@ OTMapGenerator.prototype.digCaves = function (layers) {
 
         if (
           Math.random() < self.CONFIGURATION.GENERATION.CAVE_CHANCE &&
-          NR.E === mountains[mountainType + "_TILE_ID"] &&
-          NL.W === mountains[mountainType + "_TILE_ID"] &&
-          x === mountains[mountainType + "_TILE_ID"] &&
+          NR.E ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
+          NL.W ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
+          x ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
           self.countNeighbours(
             neighbours,
-            mountains[mountainType + "_TILE_ID"]
+            mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
           ) === 5 &&
-          neighbours.W === mountains[mountainType + "_TILE_ID"] &&
-          neighbours.E === mountains[mountainType + "_TILE_ID"]
+          neighbours.W ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
+          neighbours.E ===
+            mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
         ) {
           entrances.push({ z: z, c: coordinates })
           return ITEMS.GRAVEL_TILE_ID
         } else if (
           Math.random() < self.CONFIGURATION.GENERATION.CAVE_CHANCE &&
-          NS.S === mountains[mountainType + "_TILE_ID"] &&
-          NN.N === mountains[mountainType + "_TILE_ID"] &&
-          x === mountains[mountainType + "_TILE_ID"] &&
+          NS.S ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
+          NN.N ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
+          x ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
           self.countNeighbours(
             neighbours,
-            mountains[mountainType + "_TILE_ID"]
+            mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
           ) === 5 &&
-          neighbours.S === mountains[mountainType + "_TILE_ID"] &&
-          neighbours.N === mountains[mountainType + "_TILE_ID"]
+          neighbours.S ===
+            mountains[
+              self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
+            ] &&
+          neighbours.N ===
+            mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
         ) {
           entrances.push({ z: z, c: coordinates })
           return ITEMS.GRAVEL_TILE_ID
@@ -554,7 +582,8 @@ OTMapGenerator.prototype.fillColumn = function (layers, x, y, z, id) {
 
   // Fill downwards with mountain
   for (var i = 0; i < z; i++) {
-    layers[i][index] = mountains[mountainType + "_TILE_ID"]
+    layers[i][index] =
+      mountains[this.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
   }
 }
 
@@ -674,6 +703,17 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
    * Converts layers to OTBM tile areas
    */
 
+  const {
+    getMountainWallOuter,
+    getFloatingBorder,
+    getWaterBorder,
+    getMountainBorders,
+    getMountainWall,
+    getWaterBorderSand,
+    getSandBorder,
+    getGrassBorder,
+  } = useBorders(this.CONFIGURATION)
+
   function createOTBMItem(id) {
     /* FUNCTION createOTBMItem
      * Creates OTBM_ITEM object for OTBM2JSON
@@ -727,8 +767,11 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         var neighbours = self.getAdjacentTiles(layer, coordinates)
 
         // Mountain tile: border outside
-        if (x !== mountains[mountainType + "_TILE_ID"]) {
-          items.add(border.getMountainWallOuter(neighbours))
+        if (
+          x !==
+          mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
+        ) {
+          items.add(getMountainWallOuter(neighbours))
         }
 
         // All empty tiles can be skipped
@@ -737,8 +780,12 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         }
 
         // Mountain tile: border inside
-        if (!items.length && x === mountains[mountainType + "_TILE_ID"]) {
-          items.add(border.getMountainWall(neighbours))
+        if (
+          !items.length &&
+          x ===
+            mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
+        ) {
+          items.add(getMountainWall(neighbours))
         }
 
         n =
@@ -805,22 +852,22 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
 
         // Add grass border to gravel tile
         if (x === ITEMS.GRAVEL_TILE_ID) {
-          items.add(border.getGrassBorder(neighbours))
+          items.add(getGrassBorder(neighbours))
         }
 
         // Add water border for sand tile
         if (x === ITEMS.SAND_TILE_ID) {
-          items.add(border.getWaterBorderSand(neighbours))
+          items.add(getWaterBorderSand(neighbours))
         }
 
         // Add sand border to gravel and grass
         if (x === ITEMS.GRAVEL_TILE_ID || x === ITEMS.GRASS_TILE_ID) {
-          Array.prototype.push.apply(items, border.getSandBorder(neighbours))
+          Array.prototype.push.apply(items, getSandBorder(neighbours))
         }
 
         // Border grass & water interface
         if (x === ITEMS.GRASS_TILE_ID) {
-          items.add(border.getWaterBorder(neighbours))
+          items.add(getWaterBorder(neighbours))
         }
 
         // Add wide border on top of mountain (multiple)
@@ -829,15 +876,15 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           x === ITEMS.STONE_TILE_ID ||
           x === ITEMS.SAND_TILE_ID
         ) {
-          Array.prototype.push.apply(
-            items,
-            border.getFloatingBorder(neighbours)
-          )
+          Array.prototype.push.apply(items, getFloatingBorder(neighbours))
         }
 
         // Border at foot of mountain
-        if (x !== mountains[mountainType + "_TILE_ID"]) {
-          const borders = border.getMountainBorders(neighbours)
+        if (
+          x !==
+          mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
+        ) {
+          const borders = getMountainBorders(neighbours)
 
           if (borders.length) {
             borders.map((item) => items.add(item))

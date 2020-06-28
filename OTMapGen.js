@@ -35,7 +35,7 @@ var OTMapGenerator = function () {
 
   // Default configuration to be overwritten
   this.CONFIGURATION = {
-    SEED: 3,
+    SEED: 333,
     WIDTH: 256,
     HEIGHT: 256,
     VERSION: "10.98",
@@ -54,7 +54,7 @@ var OTMapGenerator = function () {
       WATER_LEVEL: 1.5,
       EXPONENT: 1.6,
       LINEAR: 9.0,
-      MOUNTAIN_TYPE: "EARTH_MOUNTAIN",
+      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.3 },
         { f: 2, weight: 0.2 },

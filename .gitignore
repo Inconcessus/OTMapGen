@@ -3,3 +3,4 @@
 OTBM2JSON
 bundle.js
 *.xml
+node_modules/

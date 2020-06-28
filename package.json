@@ -1,0 +1,26 @@
+{
+  "name": "otmapgen",
+  "version": "1.0.0",
+  "description": "An online version of this application can be found on http://inconcessus.github.io.",
+  "main": "OTMapGen.js",
+  "directories": {
+    "doc": "doc",
+    "lib": "lib"
+  },
+  "scripts": {
+    "watch": "nodemon --exec 'node OTMapGen.js'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edaegonis/OTMapGen.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/edaegonis/OTMapGen/issues"
+  },
+  "homepage": "https://github.com/edaegonis/OTMapGen#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}

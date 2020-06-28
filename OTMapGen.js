@@ -807,7 +807,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         // Crappy noise map to put forests (FIXME)
         // Check if the tile is occupied
         if (!items.length && x === ITEMS.GRASS_TILE_ID) {
-          if (n > 0) {
+          if (n > 0 && Math.random() < 0.4) {
             items.add(clutter.randomTree())
           }
         }

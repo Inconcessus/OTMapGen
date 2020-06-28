@@ -36,8 +36,8 @@ var OTMapGenerator = function () {
   // Default configuration to be overwritten
   this.CONFIGURATION = {
     SEED: 0,
-    WIDTH: 512,
-    HEIGHT: 512,
+    WIDTH: 128,
+    HEIGHT: 128,
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
@@ -51,10 +51,10 @@ var OTMapGenerator = function () {
       EUCLIDEAN: true,
       SMOOTH_COASTLINE: false,
       ADD_CAVES: false,
-      WATER_LEVEL: 0,
+      WATER_LEVEL: 1.5,
       EXPONENT: 1,
       LINEAR: 12.0,
-      MOUNTAIN_TYPE: "MOUNTAIN",
+      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.3 },
         { f: 2, weight: 0.2 },
@@ -382,17 +382,27 @@ OTMapGenerator.prototype.mapElevation = function (z, b) {
   switch (true) {
     case z < 0:
       return ITEMS.WATER_TILE_ID
+
     case z > 3:
       if (b > -1.5) {
         return ITEMS.STONE_TILE_ID
       } else {
         return ITEMS.SNOW_TILE_ID
       }
+
     default:
-      if (b < -1.5) {
-        return ITEMS.SAND_TILE_ID
-      } else {
-        return ITEMS.GRASS_TILE_ID
+      switch (this.CONFIGURATION.GENERATION.MOUNTAIN_TYPE) {
+        case "ICY_MOUNTAIN":
+          if (z > 0) {
+            return ITEMS.ICE_TILE_ID
+          }
+
+        default:
+          if (b < -1.5) {
+            return ITEMS.SAND_TILE_ID
+          } else {
+            return ITEMS.GRASS_TILE_ID
+          }
       }
   }
 }
@@ -874,7 +884,8 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         if (
           x === ITEMS.GRASS_TILE_ID ||
           x === ITEMS.STONE_TILE_ID ||
-          x === ITEMS.SAND_TILE_ID
+          x === ITEMS.SAND_TILE_ID ||
+          x === ITEMS.ICE_TILE_ID
         ) {
           Array.prototype.push.apply(items, getFloatingBorder(neighbours))
         }

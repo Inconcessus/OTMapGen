@@ -35,26 +35,26 @@ var OTMapGenerator = function () {
 
   // Default configuration to be overwritten
   this.CONFIGURATION = {
-    SEED: 0,
-    WIDTH: 128,
-    HEIGHT: 128,
+    SEED: 3,
+    WIDTH: 256,
+    HEIGHT: 256,
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
-      A: 0.05,
-      B: 1.05,
+      A: -0.05,
+      B: 0.6,
       C: 1,
       CAVE_DEPTH: 12,
       CAVE_ROUGHNESS: 0.45,
       CAVE_CHANCE: 0.005,
-      SAND_BIOME: true,
+      SAND_BIOME: false,
       EUCLIDEAN: true,
       SMOOTH_COASTLINE: false,
-      ADD_CAVES: false,
+      ADD_CAVES: true,
       WATER_LEVEL: 1.5,
-      EXPONENT: 1,
-      LINEAR: 12.0,
-      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
+      EXPONENT: 1.6,
+      LINEAR: 9.0,
+      MOUNTAIN_TYPE: "EARTH_MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.3 },
         { f: 2, weight: 0.2 },
@@ -847,6 +847,25 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
             items.add(clutter.randomShell())
           } else if (Math.random() < 0.015) {
             items.add(clutter.randomSandstone())
+          }
+        }
+
+        // clutter to be added to ice tile
+        if (x === ITEMS.ICE_TILE_ID) {
+          if (n > 0.25) {
+            items.push(clutter.randomIces())
+          }
+
+          if (n > 0 && Math.random() < 0.2) {
+            items.push(clutter.randomSnows())
+          }
+
+          if (n > 0 && Math.random() < 0.1) {
+            items.push(clutter.randomPebble())
+          }
+
+          if (n > 0 && Math.random() < 0.05) {
+            items.push(6966)
           }
         }
 

@@ -35,25 +35,25 @@ var OTMapGenerator = function () {
 
   // Default configuration to be overwritten
   this.CONFIGURATION = {
-    SEED: 333,
-    WIDTH: 256,
-    HEIGHT: 256,
+    SEED: 423523423423,
+    WIDTH: 512,
+    HEIGHT: 512,
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
-      A: 0.1,
+      A: 0.3,
       B: 0.6,
-      C: 1,
-      CAVE_DEPTH: 12,
+      C: 2.1,
+      CAVE_DEPTH: 20,
       CAVE_ROUGHNESS: 0.45,
-      CAVE_CHANCE: 0.005,
+      CAVE_CHANCE: 0.009,
       SAND_BIOME: true,
       EUCLIDEAN: false,
       SMOOTH_COASTLINE: true,
       ADD_CAVES: true,
-      WATER_LEVEL: 2,
+      WATER_LEVEL: 3,
       EXPONENT: 1,
-      LINEAR: 9,
+      LINEAR: 6,
       MOUNTAIN_TYPE: "MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.3 },
@@ -738,7 +738,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
   // Create hashmap for the tile areas
   var tileAreas = new Object()
   var self = this
-  let createdWaypoints = 0
+  let createdWaypoints = []
 
   // Convert layers to OTBM tile areas
   layers.forEach(function (layer, z) {
@@ -810,13 +810,6 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         if (!items.length && x === ITEMS.GRASS_TILE_ID) {
           if (n > 0 && Math.random() < 0.4) {
             items.add(clutter.randomTree())
-          }
-
-          if (n > 0 && Math.random() < 0.007) {
-            // if (!createdWaypoints >= 7) {
-            console.log("creating waypoint...")
-            x = 12118
-            // }
           }
         }
 
@@ -929,6 +922,22 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           }
         }
 
+        /** add dimensional portals */
+        if (
+          (!items.length && x === ITEMS.GRASS_TILE_ID) ||
+          x === ITEMS.SAND_TILE_ID ||
+          x === ITEMS.ICE_TILE_ID
+        ) {
+          if (n > 0.56 && Math.random() < 0.007) {
+            // if (!createdWaypoints >= 7) {
+            createdWaypoints.push({
+              position: { ...coordinates, z },
+            })
+            items.add(11796)
+            // }
+          }
+        }
+
         // Version filter remove anything below a certain ID
         items = items.filter(function (id) {
           return id !== 0 && id < VERSIONS[self.CONFIGURATION.VERSION].maxId
@@ -946,6 +955,9 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
       })
     })
   })
+
+  console.log("generated " + createdWaypoints.length + " waypoints")
+  fs.writeFileSync("waypoints.json", JSON.stringify(createdWaypoints))
 
   return tileAreas
 }

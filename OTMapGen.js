@@ -41,20 +41,20 @@ var OTMapGenerator = function () {
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
-      A: -0.05,
+      A: 0.1,
       B: 0.6,
       C: 1,
       CAVE_DEPTH: 12,
       CAVE_ROUGHNESS: 0.45,
       CAVE_CHANCE: 0.005,
-      SAND_BIOME: false,
-      EUCLIDEAN: true,
-      SMOOTH_COASTLINE: false,
+      SAND_BIOME: true,
+      EUCLIDEAN: false,
+      SMOOTH_COASTLINE: true,
       ADD_CAVES: true,
-      WATER_LEVEL: 1.5,
-      EXPONENT: 1.6,
-      LINEAR: 9.0,
-      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
+      WATER_LEVEL: 2,
+      EXPONENT: 1,
+      LINEAR: 9,
+      MOUNTAIN_TYPE: "MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.3 },
         { f: 2, weight: 0.2 },
@@ -398,7 +398,7 @@ OTMapGenerator.prototype.mapElevation = function (z, b) {
           }
 
         default:
-          if (b < -1.5) {
+          if (b < -5) {
             return ITEMS.SAND_TILE_ID
           } else {
             return ITEMS.GRASS_TILE_ID
@@ -738,6 +738,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
   // Create hashmap for the tile areas
   var tileAreas = new Object()
   var self = this
+  let createdWaypoints = 0
 
   // Convert layers to OTBM tile areas
   layers.forEach(function (layer, z) {
@@ -809,6 +810,13 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         if (!items.length && x === ITEMS.GRASS_TILE_ID) {
           if (n > 0 && Math.random() < 0.4) {
             items.add(clutter.randomTree())
+          }
+
+          if (n > 0 && Math.random() < 0.007) {
+            // if (!createdWaypoints >= 7) {
+            console.log("creating waypoint...")
+            x = 12118
+            // }
           }
         }
 

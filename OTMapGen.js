@@ -35,15 +35,15 @@ var OTMapGenerator = function () {
 
   // Default configuration to be overwritten
   this.CONFIGURATION = {
-    SEED: 423523423423,
+    SEED: 333666999,
     WIDTH: 512,
     HEIGHT: 512,
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
       A: 0.3,
-      B: 0.6,
-      C: 2.1,
+      B: 0.01,
+      C: 1,
       CAVE_DEPTH: 20,
       CAVE_ROUGHNESS: 0.45,
       CAVE_CHANCE: 0.009,
@@ -51,12 +51,12 @@ var OTMapGenerator = function () {
       EUCLIDEAN: false,
       SMOOTH_COASTLINE: true,
       ADD_CAVES: true,
-      WATER_LEVEL: 3,
+      WATER_LEVEL: 2,
       EXPONENT: 1,
-      LINEAR: 6,
+      LINEAR: 3,
       MOUNTAIN_TYPE: "MOUNTAIN",
       FREQUENCIES: [
-        { f: 1, weight: 0.3 },
+        { f: 1, weight: 1 },
         { f: 2, weight: 0.2 },
         { f: 4, weight: 0.2 },
         { f: 8, weight: 0.125 },

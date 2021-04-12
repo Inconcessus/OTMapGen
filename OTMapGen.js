@@ -35,15 +35,15 @@ var OTMapGenerator = function () {
 
   // Default configuration to be overwritten
   this.CONFIGURATION = {
-    SEED: 333666999,
-    WIDTH: 512,
-    HEIGHT: 512,
+    SEED: "-2199324167357100",
+    WIDTH: 1024,
+    HEIGHT: 1024,
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
-      A: 0.3,
-      B: 0.01,
-      C: 1,
+      A: 1,
+      B: 0.92,
+      C: 0.25,
       CAVE_DEPTH: 20,
       CAVE_ROUGHNESS: 0.45,
       CAVE_CHANCE: 0.009,
@@ -52,11 +52,11 @@ var OTMapGenerator = function () {
       SMOOTH_COASTLINE: true,
       ADD_CAVES: true,
       WATER_LEVEL: 2,
-      EXPONENT: 1,
-      LINEAR: 3,
-      MOUNTAIN_TYPE: "MOUNTAIN",
+      EXPONENT: 1.4,
+      LINEAR: 6,
+      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
       FREQUENCIES: [
-        { f: 1, weight: 1 },
+        { f: 1, weight: 0.3 },
         { f: 2, weight: 0.2 },
         { f: 4, weight: 0.2 },
         { f: 8, weight: 0.125 },
@@ -395,6 +395,8 @@ OTMapGenerator.prototype.mapElevation = function (z, b) {
         case "ICY_MOUNTAIN":
           if (z > 0) {
             return ITEMS.ICE_TILE_ID
+          } else {
+            return ITEMS.SNOW_TILE_ID
           }
 
         default:
@@ -852,7 +854,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         }
 
         // clutter to be added to ice tile
-        if (x === ITEMS.ICE_TILE_ID) {
+        if (x === ITEMS.ICE_TILE_ID || x === ITEMS.SNOW_TILE_ID) {
           if (n > 0.25) {
             items.push(clutter.randomIces())
           }
@@ -896,7 +898,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         }
 
         // Border grass & water interface
-        if (x === ITEMS.GRASS_TILE_ID) {
+        if (x === ITEMS.GRASS_TILE_ID || x === ITEMS.SNOW_TILE_ID) {
           items.add(getWaterBorder(neighbours))
         }
 
@@ -905,7 +907,8 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           x === ITEMS.GRASS_TILE_ID ||
           x === ITEMS.STONE_TILE_ID ||
           x === ITEMS.SAND_TILE_ID ||
-          x === ITEMS.ICE_TILE_ID
+          x === ITEMS.ICE_TILE_ID ||
+          x === ITEMS.SNOW_TILE_ID
         ) {
           Array.prototype.push.apply(items, getFloatingBorder(neighbours))
         }
@@ -923,20 +926,20 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         }
 
         /** add dimensional portals */
-        if (
-          (!items.length && x === ITEMS.GRASS_TILE_ID) ||
-          x === ITEMS.SAND_TILE_ID ||
-          x === ITEMS.ICE_TILE_ID
-        ) {
-          if (n > 0.56 && Math.random() < 0.007) {
-            // if (!createdWaypoints >= 7) {
-            createdWaypoints.push({
-              position: { ...coordinates, z },
-            })
-            items.add(11796)
-            // }
-          }
-        }
+        // if (
+        //   (!items.length && x === ITEMS.GRASS_TILE_ID) ||
+        //   x === ITEMS.SAND_TILE_ID ||
+        //   x === ITEMS.ICE_TILE_ID
+        // ) {
+        //   if (n > 0.56 && Math.random() < 0.007) {
+        //     // if (!createdWaypoints >= 7) {
+        //     createdWaypoints.push({
+        //       position: { ...coordinates, z },
+        //     })
+        //     items.add(11796)
+        //     // }
+        //   }
+        // }
 
         // Version filter remove anything below a certain ID
         items = items.filter(function (id) {

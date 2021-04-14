@@ -69,7 +69,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
    * Creates a RGBA layer
    */
 
-  function getMinimapColor(id) {
+  function getMinimapColor(id, configuration) {
     /*
      * Function OTMapGenerator::createRGBALayer::getMinimapColor
      * Maps tile identifier to minimap color
@@ -92,7 +92,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
         return GRASS_COLOR
       case ITEMS.SAND_TILE_ID:
         return SAND_COLOR
-      case mountains[this.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]:
+      case mountains[configuration.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]:
         return MOUNTAIN_COLOR
       case ITEMS.GRAVEL_TILE_ID:
       case ITEMS.STONE_TILE_ID:
@@ -151,7 +151,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
     }
 
     // Color is the 6 byte hex RGB representation
-    hexColor = getMinimapColor(value)
+    hexColor = getMinimapColor(value, this.CONFIGURATION)
 
     // Bitshift to extract component and write RGBA in the buffer (always 0xFF for A)
     byteArray[R] = (hexColor >> 16) & 0xff

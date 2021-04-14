@@ -1,6 +1,6 @@
 {
   "name": "otmapgen",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Open Tibia Map Generator",
   "main": "OTMapGen.js",
   "directories": {

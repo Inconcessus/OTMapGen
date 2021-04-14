@@ -779,7 +779,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           x !==
           mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
         ) {
-          items.add(getMountainWallOuter(neighbours))
+          pushItemToArray(items, getMountainWallOuter(neighbours))
         }
 
         // All empty tiles can be skipped
@@ -793,7 +793,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           x ===
             mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
         ) {
-          items.add(getMountainWall(neighbours))
+          pushItemToArray(items, getMountainWall(neighbours))
         }
 
         n =
@@ -806,7 +806,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         // Check if the tile is occupied
         if (!items.length && x === ITEMS.GRASS_TILE_ID) {
           if (n > 0 && Math.random() < 0.4) {
-            items.add(clutter.randomTree())
+            pushItemToArray(items, clutter.randomTree())
           }
         }
 
@@ -817,7 +817,8 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
 
         // Add a random water plant
         if (!items.length && x === ITEMS.WATER_TILE_ID) {
-          items.add(
+          pushItemToArray(
+            items,
             clutter.randomWaterPlant(
               self.countNeighbours(neighbours, ITEMS.GRASS_TILE_ID)
             )
@@ -829,22 +830,22 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           nWaterNeighbours !== 0
         ) {
           if (n > 0 && Math.random() < 0.075) {
-            items.add(clutter.randomSandstoneMossy())
+            pushItemToArray(items, clutter.randomSandstoneMossy())
           }
         }
 
         // Clutter to be added to a sand tile
         if (!items.length && x === ITEMS.SAND_TILE_ID) {
           if (n > 0 && Math.random() < 0.25 && nWaterNeighbours === 0) {
-            items.add(clutter.randomPebble())
+            pushItemToArray(items, clutter.randomPebble())
           } else if (n > 0.33 && Math.random() < 0.25) {
-            items.add(clutter.randomCactus())
+            pushItemToArray(items, clutter.randomCactus())
           } else if (Math.random() < 0.45) {
-            items.add(clutter.randomPalmTree(neighbours))
+            pushItemToArray(items, clutter.randomPalmTree(neighbours))
           } else if (z === 0 && Math.random() < 0.075) {
-            items.add(clutter.randomShell())
+            pushItemToArray(items, clutter.randomShell())
           } else if (Math.random() < 0.015) {
-            items.add(clutter.randomSandstone())
+            pushItemToArray(items, clutter.randomSandstone())
           }
         }
 
@@ -879,12 +880,12 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
 
         // Add grass border to gravel tile
         if (x === ITEMS.GRAVEL_TILE_ID) {
-          items.add(getGrassBorder(neighbours))
+          pushItemToArray(items, getGrassBorder(neighbours))
         }
 
         // Add water border for sand tile
         if (x === ITEMS.SAND_TILE_ID) {
-          items.add(getWaterBorderSand(neighbours))
+          pushItemToArray(items, getWaterBorderSand(neighbours))
         }
 
         // Add sand border to gravel and grass
@@ -894,7 +895,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
 
         // Border grass & water interface
         if (x === ITEMS.GRASS_TILE_ID || x === ITEMS.SNOW_TILE_ID) {
-          items.add(getWaterBorder(neighbours))
+          pushItemToArray(items, getWaterBorder(neighbours))
         }
 
         // Add wide border on top of mountain (multiple)
@@ -916,7 +917,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           const borders = getMountainBorders(neighbours)
 
           if (borders.length) {
-            borders.map((item) => items.add(item))
+            borders.map((item) => pushItemToArray(items, item))
           }
         }
 
@@ -931,7 +932,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
         //     createdWaypoints.push({
         //       position: { ...coordinates, z },
         //     })
-        //     items.add(11796)
+        //     pushItemToArray(items, 11796)
         //     // }
         //   }
         // }
@@ -960,12 +961,9 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
   return tileAreas
 }
 
-Array.prototype.add = function (id) {
-  /* Array.prototype.add
-   * Pushes item to array if it is not null
-   */
-  if (id && id !== null) {
-    this.push(id)
+function pushItemToArray(array, item) {
+  if (item && item !== null) {
+    array.push(item)
   }
 }
 

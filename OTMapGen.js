@@ -959,8 +959,8 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
     })
   })
 
-  console.log("generated " + createdWaypoints.length + " waypoints")
-  fs.writeFileSync("waypoints.json", JSON.stringify(createdWaypoints))
+  // console.log("generated " + createdWaypoints.length + " waypoints")
+  // fs.writeFileSync("waypoints.json", JSON.stringify(createdWaypoints))
 
   return tileAreas
 }

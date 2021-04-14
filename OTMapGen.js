@@ -1,6 +1,3 @@
-// Native libs
-const fs = require("fs")
-
 // OTBM2JSON lib
 const otbm2json = require("otbm2json/otbm2json")
 
@@ -17,9 +14,7 @@ const ITEMS = require("./json/items")
 const mountains = require("./json/items/mountains")
 const VERSIONS = require("./json/versions")
 
-const __VERSION__ = "1.3.0"
-
-var OTMapGenerator = function () {
+const OTMapGenerator = function () {
   /*
    * Class OTMapGenerator
    * Container for the OTMapGenerator class
@@ -974,11 +969,4 @@ Array.prototype.add = function (id) {
   }
 }
 
-// Expose the class
-module.exports.OTMapGenerator = new OTMapGenerator()
-module.exports.__VERSION__ = __VERSION__
-
-if (require.main === module) {
-  // Run from main
-  fs.writeFileSync("map.otbm", module.exports.OTMapGenerator.generate())
-}
+module.exports.OTMapGenerator = OTMapGenerator

@@ -2,7 +2,7 @@
 const fs = require("fs")
 
 // OTBM2JSON lib
-const otbm2json = require("./OTBM2JSON/otbm2json")
+const otbm2json = require("otbm2json/otbm2json")
 
 //  Noise funcion
 const noise = require("./lib/noise").noise

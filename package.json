@@ -1,7 +1,7 @@
 {
   "name": "otmapgen",
-  "version": "1.0.0",
-  "description": "An online version of this application can be found on http://inconcessus.github.io.",
+  "version": "1.4.0",
+  "description": "Open Tibia Map Generator",
   "main": "OTMapGen.js",
   "directories": {
     "doc": "doc",
@@ -22,5 +22,8 @@
   "homepage": "https://github.com/edaegonis/OTMapGen#readme",
   "devDependencies": {
     "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "otbm2json": "^0.2.0"
   }
 }

@@ -127,7 +127,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
 
   // Image will occupy four bytes per tile (pixel; RGBA)
   var byteArray = new Uint8ClampedArray(
-    4 * this.CONFIGURATION.WIDTH * this.CONFIGURATION.HEIGHT
+    4 * Number(this.CONFIGURATION.WIDTH) * this.CONFIGURATION.HEIGHT
   )
 
   layer.forEach(function (value, i) {
@@ -142,7 +142,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
 
     // No tile: skip or outline
     if (value === 0) {
-      if (shouldOutline(layer, i, this.CONFIGURATION.WIDTH)) {
+      if (shouldOutline(layer, i, Number(this.CONFIGURATION.WIDTH))) {
         byteArray[R] = OUTLINE_COLOR
         byteArray[G] = OUTLINE_COLOR
         byteArray[B] = OUTLINE_COLOR
@@ -224,7 +224,7 @@ OTMapGenerator.prototype.setMapHeader = function (data) {
     throw "The requested map version is not supported."
   }
 
-  data.mapWidth = this.CONFIGURATION.WIDTH
+  data.mapWidth = Number(this.CONFIGURATION.WIDTH)
   data.mapHeight = this.CONFIGURATION.HEIGHT
 
   var versionAttributes = VERSIONS[this.CONFIGURATION.VERSION]
@@ -250,9 +250,9 @@ OTMapGenerator.prototype.generateMapLayers = function () {
      * Creates an empty layer of map size (WIDTH x HEIGHT)
      */
 
-    return new Array(this.CONFIGURATION.WIDTH * this.CONFIGURATION.HEIGHT).fill(
-      0
-    )
+    return new Array(
+      Number(this.CONFIGURATION.WIDTH) * this.CONFIGURATION.HEIGHT
+    ).fill(0)
   }
 
   var z, id
@@ -265,7 +265,7 @@ OTMapGenerator.prototype.generateMapLayers = function () {
 
   // Loop over the requested map width and height
   for (var y = 0; y < this.CONFIGURATION.HEIGHT; y++) {
-    for (var x = 0; x < this.CONFIGURATION.WIDTH; x++) {
+    for (var x = 0; x < Number(this.CONFIGURATION.WIDTH); x++) {
       // Get the elevation
       z = this.zNoiseFunction(x, y)
       b = this.CONFIGURATION.GENERATION.SAND_BIOME
@@ -414,7 +414,7 @@ OTMapGenerator.prototype.digCaves = function (layers) {
   var entrances = new Array()
   var self = this
 
-  for (var k = 0; k < this.CONFIGURATION.GENERATION.CAVE_DEPTH; k++) {
+  for (var k = 0; k < Number(this.CONFIGURATION.GENERATION.CAVE_DEPTH); k++) {
     console.log("Eroding caves <iteration " + k + ">")
 
     layers = layers.map(function (layer, z) {
@@ -435,7 +435,7 @@ OTMapGenerator.prototype.digCaves = function (layers) {
             neighbours,
             mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
           ) === 0 &&
-          Math.random() < self.CONFIGURATION.GENERATION.CAVE_ROUGHNESS
+          Math.random() < Number(self.CONFIGURATION.GENERATION.CAVE_ROUGHNESS)
         ) {
           return ITEMS.GRAVEL_TILE_ID
         }
@@ -459,7 +459,7 @@ OTMapGenerator.prototype.digCaves = function (layers) {
         })
 
         if (
-          Math.random() < self.CONFIGURATION.GENERATION.CAVE_CHANCE &&
+          Math.random() < Number(self.CONFIGURATION.GENERATION.CAVE_CHANCE) &&
           NR.E ===
             mountains[
               self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
@@ -486,7 +486,7 @@ OTMapGenerator.prototype.digCaves = function (layers) {
           entrances.push({ z: z, c: coordinates })
           return ITEMS.GRAVEL_TILE_ID
         } else if (
-          Math.random() < self.CONFIGURATION.GENERATION.CAVE_CHANCE &&
+          Math.random() < Number(self.CONFIGURATION.GENERATION.CAVE_CHANCE) &&
           NS.S ===
             mountains[
               self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"
@@ -599,7 +599,7 @@ OTMapGenerator.prototype.getIndex = function (x, y) {
    * Converts x, y to layer index
    */
 
-  return x + y * this.CONFIGURATION.WIDTH
+  return x + y * Number(this.CONFIGURATION.WIDTH)
 }
 
 OTMapGenerator.prototype.getAdjacentTiles = function (layer, coordinates) {
@@ -640,15 +640,15 @@ OTMapGenerator.prototype.zNoiseFunction = function (x, y) {
    */
 
   // Island parameters
-  const a = this.CONFIGURATION.GENERATION.A
-  const b = this.CONFIGURATION.GENERATION.B
-  const c = this.CONFIGURATION.GENERATION.C
-  const e = this.CONFIGURATION.GENERATION.EXPONENT
-  const f = this.CONFIGURATION.GENERATION.LINEAR
-  const w = this.CONFIGURATION.GENERATION.WATER_LEVEL
+  const a = Number(this.CONFIGURATION.GENERATION.A)
+  const b = Number(this.CONFIGURATION.GENERATION.B)
+  const c = Number(this.CONFIGURATION.GENERATION.C)
+  const e = Number(this.CONFIGURATION.GENERATION.EXPONENT)
+  const f = Number(this.CONFIGURATION.GENERATION.LINEAR)
+  const w = Number(this.CONFIGURATION.GENERATION.WATER_LEVEL)
 
   // Scaled coordinates between -0.5 and 0.5
-  var nx = x / (this.CONFIGURATION.WIDTH - 1) - 0.5
+  var nx = x / (Number(this.CONFIGURATION.WIDTH) - 1) - 0.5
   var ny = y / (this.CONFIGURATION.HEIGHT - 1) - 0.5
 
   // Manhattan distance
@@ -675,7 +675,7 @@ OTMapGenerator.prototype.sumFrequencies = function (nx, ny) {
 
   return this.CONFIGURATION.GENERATION.FREQUENCIES.reduce(
     function (total, x) {
-      return total + this.simplex2freq(x.f, x.weight, nx, ny)
+      return total + this.simplex2freq(Number(x.f), Number(x.weight), nx, ny)
     }.bind(this),
     0
   )
@@ -687,8 +687,8 @@ OTMapGenerator.prototype.getCoordinates = function (index) {
    */
 
   return {
-    x: index % this.CONFIGURATION.WIDTH,
-    y: Math.floor(index / this.CONFIGURATION.WIDTH),
+    x: index % Number(this.CONFIGURATION.WIDTH),
+    y: Math.floor(index / Number(this.CONFIGURATION.WIDTH)),
   }
 }
 
@@ -699,7 +699,7 @@ OTMapGenerator.prototype.simplex2freq = function (f, weight, nx, ny) {
    */
 
   // Scale the frequency to the map size
-  fWidth = (f * this.CONFIGURATION.WIDTH) / this.TILE_AREA_SIZE
+  fWidth = (f * Number(this.CONFIGURATION.WIDTH)) / this.TILE_AREA_SIZE
   fHeight = (f * this.CONFIGURATION.HEIGHT) / this.TILE_AREA_SIZE
 
   return weight * noise.simplex2(fWidth * nx, fHeight * ny)

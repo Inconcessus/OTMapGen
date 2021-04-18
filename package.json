@@ -8,7 +8,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "watch": "nodemon --exec 'node OTMapGen.js'"
+    "watch": "nodemon --exec 'node index.js'"
   },
   "repository": {
     "type": "git",

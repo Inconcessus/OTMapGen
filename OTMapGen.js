@@ -736,7 +736,6 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
   // Create hashmap for the tile areas
   var tileAreas = new Object()
   var self = this
-  let createdWaypoints = []
 
   // Convert layers to OTBM tile areas
   layers.forEach(function (layer, z) {
@@ -930,22 +929,6 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
           }
         }
 
-        /** add dimensional portals */
-        // if (
-        //   (!items.length && x === ITEMS.GRASS_TILE_ID) ||
-        //   x === ITEMS.SAND_TILE_ID ||
-        //   x === ITEMS.ICE_TILE_ID
-        // ) {
-        //   if (n > 0.56 && Math.random() < 0.007) {
-        //     // if (!createdWaypoints >= 7) {
-        //     createdWaypoints.push({
-        //       position: { ...coordinates, z },
-        //     })
-        //     pushItemToArray(items, 11796)
-        //     // }
-        //   }
-        // }
-
         // Version filter remove anything below a certain ID
         items = items.filter(function (id) {
           return id !== 0 && id < VERSIONS[self.CONFIGURATION.VERSION].maxId
@@ -963,9 +946,6 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
       })
     })
   })
-
-  // console.log("generated " + createdWaypoints.length + " waypoints")
-  // fs.writeFileSync("waypoints.json", JSON.stringify(createdWaypoints))
 
   return tileAreas
 }

@@ -12,18 +12,20 @@ Simple prototype for a simplex noise seeded OpenTibia map generator. This genera
 
 # Dependencies
 
-- OTBM2JSON (https://github.com/Inconcessus/OTBM2JSON)
-- NodeJS
+- NodeJS have to be installed in your machine for development mode. Install it using [NVM](https://github.com/nvm-sh/nvm)
 
 # Usage
 
-1. Clone this. $ `git clone https://github.com/Inconcessus/OTMapGen.git`
+1. Run `git clone https://github.com/Inconcessus/OTMapGen.git` to clone the repository.
 
-2. Then call the `OTMapGen.js` and look for the created output: `map.otbm`.
+2. Go to `OTMapGen/` and run `npm install`
+
+3. Run `npm run watch` to watch code changes, or simply run `node index.js` to generate the OTBM file.
+
+4. Then look for the output: `map.otbm`.
 
 - It is option to modify the noise seed and change some generation parameters inside generation script.
-- $ `node OTMapGen.js`
 
 # Version
 
-Version 1.4.0. This is a work in progress.
+Version 1.5.5. This is a work in progress.

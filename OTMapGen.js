@@ -30,9 +30,9 @@ const OTMapGenerator = function () {
 
   // Default configuration to be overwritten
   this.CONFIGURATION = {
-    SEED: "-2199324167357100",
-    WIDTH: 1024,
-    HEIGHT: 1024,
+    SEED: "",
+    WIDTH: 256,
+    HEIGHT: 256,
     VERSION: "10.98",
     TERRAIN_ONLY: false,
     GENERATION: {
@@ -41,7 +41,7 @@ const OTMapGenerator = function () {
       C: 0.25,
       CAVE_DEPTH: 20,
       CAVE_ROUGHNESS: 0.45,
-      CAVE_CHANCE: 0.009,
+      CAVE_CHANCE: 0.09,
       SAND_BIOME: true,
       EUCLIDEAN: false,
       SMOOTH_COASTLINE: true,
@@ -49,7 +49,7 @@ const OTMapGenerator = function () {
       WATER_LEVEL: 2,
       EXPONENT: 1.4,
       LINEAR: 6,
-      MOUNTAIN_TYPE: "ICY_MOUNTAIN",
+      MOUNTAIN_TYPE: "EARTH_MOUNTAIN",
       FREQUENCIES: [
         { f: 1, weight: 0.3 },
         { f: 2, weight: 0.2 },
@@ -719,6 +719,7 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
     getWaterBorderSand,
     getSandBorder,
     getGrassBorder,
+    getMountainAdditionalItems,
   } = useBorders(this.CONFIGURATION)
 
   function createOTBMItem(id) {
@@ -794,6 +795,14 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
             mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
         ) {
           pushItemToArray(items, getMountainWall(neighbours))
+        }
+
+        /** Additional items inside the mountain tile */
+        if (
+          x ===
+          mountains[self.CONFIGURATION.GENERATION.MOUNTAIN_TYPE + "_TILE_ID"]
+        ) {
+          pushItemToArray(items, getMountainAdditionalItems(neighbours, items))
         }
 
         n =
@@ -961,9 +970,10 @@ OTMapGenerator.prototype.generateTileAreas = function (layers) {
   return tileAreas
 }
 
+/** If source item is an array, will push all of the array items. Otherwise, just push the single item */
 function pushItemToArray(array, item) {
   if (item && item !== null) {
-    array.push(item)
+    array.push(...(typeof item === "object" ? item : [item]))
   }
 }
 

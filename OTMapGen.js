@@ -127,7 +127,7 @@ OTMapGenerator.prototype.createRGBALayer = function (layer) {
 
   // Image will occupy four bytes per tile (pixel; RGBA)
   var byteArray = new Uint8ClampedArray(
-    4 * Number(this.CONFIGURATION.WIDTH) * this.CONFIGURATION.HEIGHT
+    4 * Number(this.CONFIGURATION.WIDTH) * Number(this.CONFIGURATION.HEIGHT)
   )
 
   layer.forEach(function (value, i) {
@@ -225,7 +225,7 @@ OTMapGenerator.prototype.setMapHeader = function (data) {
   }
 
   data.mapWidth = Number(this.CONFIGURATION.WIDTH)
-  data.mapHeight = this.CONFIGURATION.HEIGHT
+  data.mapHeight = Number(this.CONFIGURATION.HEIGHT)
 
   var versionAttributes = VERSIONS[this.CONFIGURATION.VERSION]
 
@@ -251,11 +251,11 @@ OTMapGenerator.prototype.generateMapLayers = function () {
      */
 
     return new Array(
-      Number(this.CONFIGURATION.WIDTH) * this.CONFIGURATION.HEIGHT
+      Number(this.CONFIGURATION.WIDTH) * Number(this.CONFIGURATION.HEIGHT)
     ).fill(0)
   }
 
-  var z, id
+  var elevation, id
 
   // Seed the noise function
   noise.seed(this.CONFIGURATION.SEED)
@@ -264,21 +264,22 @@ OTMapGenerator.prototype.generateMapLayers = function () {
   var layers = new Array(8).fill(0).map(createLayer.bind(this))
 
   // Loop over the requested map width and height
-  for (var y = 0; y < this.CONFIGURATION.HEIGHT; y++) {
+  for (var y = 0; y < Number(this.CONFIGURATION.HEIGHT); y++) {
     for (var x = 0; x < Number(this.CONFIGURATION.WIDTH); x++) {
       // Get the elevation
-      z = this.zNoiseFunction(x, y)
-      b = this.CONFIGURATION.GENERATION.SAND_BIOME
+      elevation = this.zNoiseFunction(x, y)
+
+      const additionalNoise = this.CONFIGURATION.GENERATION.SAND_BIOME
         ? 5 * this.zNoiseFunction(y, x)
         : 0
 
-      id = this.mapElevation(z, b)
+      id = this.getMapTileFromElevation(elevation, additionalNoise)
 
       // Clamp the value
-      z = Math.max(Math.min(z, 7), 0)
+      elevation = Math.max(Math.min(elevation, 7), 0)
 
       // Fill the column with mountain tiles
-      this.fillColumn(layers, x, y, z, id)
+      this.fillColumn(layers, x, y, elevation, id)
     }
   }
 
@@ -368,18 +369,21 @@ OTMapGenerator.prototype.countNeighbours = function (neighbours, id) {
   }).length
 }
 
-OTMapGenerator.prototype.mapElevation = function (z, b) {
+OTMapGenerator.prototype.getMapTileFromElevation = function (
+  elevation,
+  additionalNoise
+) {
   /*
-   * Function OTMapGenerator::mapElevation
+   * Function OTMapGenerator::getMapTileFromElevation
    * Maps particular elevation to tile id
    */
 
   switch (true) {
-    case z < 0:
+    case elevation < 0:
       return ITEMS.WATER_TILE_ID
 
-    case z > 3:
-      if (b > -1.5) {
+    case elevation > 3:
+      if (additionalNoise > -1.5) {
         return ITEMS.STONE_TILE_ID
       } else {
         return ITEMS.SNOW_TILE_ID
@@ -388,14 +392,14 @@ OTMapGenerator.prototype.mapElevation = function (z, b) {
     default:
       switch (this.CONFIGURATION.GENERATION.MOUNTAIN_TYPE) {
         case "ICY_MOUNTAIN":
-          if (z > 0) {
+          if (elevation > 0) {
             return ITEMS.ICE_TILE_ID
           } else {
             return ITEMS.SNOW_TILE_ID
           }
 
         default:
-          if (b < -5) {
+          if (additionalNoise < -5) {
             return ITEMS.SAND_TILE_ID
           } else {
             return ITEMS.GRASS_TILE_ID
@@ -640,32 +644,47 @@ OTMapGenerator.prototype.zNoiseFunction = function (x, y) {
    */
 
   // Island parameters
-  const a = Number(this.CONFIGURATION.GENERATION.A)
-  const b = Number(this.CONFIGURATION.GENERATION.B)
-  const c = Number(this.CONFIGURATION.GENERATION.C)
-  const e = Number(this.CONFIGURATION.GENERATION.EXPONENT)
-  const f = Number(this.CONFIGURATION.GENERATION.LINEAR)
-  const w = Number(this.CONFIGURATION.GENERATION.WATER_LEVEL)
+  /** Increments the noise by x (noise + x) */
+  const noiseIncrementer = Number(this.CONFIGURATION.GENERATION.A)
+  /** Multiplies the distance from center ((1 - x) * distance) */
+  const distanceMultiplier = Number(this.CONFIGURATION.GENERATION.B)
+  /** Exponential for the island distance from center */
+  const distanceExponential = Number(this.CONFIGURATION.GENERATION.C)
+  /** Exponential for the noise (for higher elevations) */
+  const noiseExponential = Number(this.CONFIGURATION.GENERATION.EXPONENT)
+  /** Multiplies the final noise result */
+  const noiseMultiplier = Number(this.CONFIGURATION.GENERATION.LINEAR)
+  /** Water level will decrement the final noise result */
+  const waterLevel = Number(this.CONFIGURATION.GENERATION.WATER_LEVEL)
 
   // Scaled coordinates between -0.5 and 0.5
-  var nx = x / (Number(this.CONFIGURATION.WIDTH) - 1) - 0.5
-  var ny = y / (this.CONFIGURATION.HEIGHT - 1) - 0.5
+  const nx = x / (Number(this.CONFIGURATION.WIDTH) - 1) - 0.5
+  const ny = y / (Number(this.CONFIGURATION.HEIGHT) - 1) - 0.5
 
+  let manhattanDistance
   // Manhattan distance
   if (this.CONFIGURATION.GENERATION.EUCLIDEAN) {
-    var d = Math.sqrt(nx * nx + ny * ny)
+    manhattanDistance = Math.sqrt(nx * nx + ny * ny)
   } else {
-    var d = 2 * Math.max(Math.abs(nx), Math.abs(ny))
+    manhattanDistance = 2 * Math.max(Math.abs(nx), Math.abs(ny))
   }
 
   // Get the noise value
-  var noise = this.sumFrequencies(nx, ny)
+  let noise = this.sumFrequencies(nx, ny)
 
   // Some exponent for mountains?
-  noise = Math.pow(noise, e | 0)
+  noise = Math.pow(noise, noiseExponential | 0)
 
   // Use distance from center to create an island
-  return Math.round(f * (noise + a) * (1 - b * Math.pow(d, c))) - (w | 0)
+  return (
+    Math.round(
+      noiseMultiplier *
+        (noise + noiseIncrementer) *
+        (1 -
+          distanceMultiplier * Math.pow(manhattanDistance, distanceExponential))
+    ) -
+    (waterLevel | 0)
+  )
 }
 
 OTMapGenerator.prototype.sumFrequencies = function (nx, ny) {
@@ -700,7 +719,7 @@ OTMapGenerator.prototype.simplex2freq = function (f, weight, nx, ny) {
 
   // Scale the frequency to the map size
   fWidth = (f * Number(this.CONFIGURATION.WIDTH)) / this.TILE_AREA_SIZE
-  fHeight = (f * this.CONFIGURATION.HEIGHT) / this.TILE_AREA_SIZE
+  fHeight = (f * Number(this.CONFIGURATION.HEIGHT)) / this.TILE_AREA_SIZE
 
   return weight * noise.simplex2(fWidth * nx, fHeight * ny)
 }

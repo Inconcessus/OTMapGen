@@ -14,6 +14,39 @@ const ITEMS = require("./json/items")
 const mountains = require("./json/items/mountains")
 const VERSIONS = require("./json/versions")
 
+const DEFAULT_CONFIG = {
+  SEED: "",
+  WIDTH: 256,
+  HEIGHT: 256,
+  VERSION: "10.98",
+  TERRAIN_ONLY: false,
+  GENERATION: {
+    NOISE_INCREMENT: 1,
+    ISLAND_DISTANCE_DECREMENT: 0.92,
+    ISLAND_DISTANCE_EXPONENT: 0.25,
+    CAVE_DEPTH: 20,
+    CAVE_ROUGHNESS: 0.45,
+    CAVE_CHANCE: 0.09,
+    SAND_BIOME: true,
+    EUCLIDEAN: false,
+    SMOOTH_COASTLINE: true,
+    ADD_CAVES: true,
+    WATER_LEVEL: 2,
+    EXPONENT: 1.4,
+    LINEAR: 6,
+    MOUNTAIN_TYPE: "MOUNTAIN",
+    FREQUENCIES: [
+      { f: 1, weight: 0.3 },
+      { f: 2, weight: 0.2 },
+      { f: 4, weight: 0.2 },
+      { f: 8, weight: 0.125 },
+      { f: 16, weight: 0.1 },
+      { f: 32, weight: 0.05 },
+      { f: 64, weight: 0.0025 },
+    ],
+  },
+}
+
 const OTMapGenerator = function () {
   /*
    * Class OTMapGenerator
@@ -29,38 +62,7 @@ const OTMapGenerator = function () {
   this.TILE_AREA_SIZE = 0xff
 
   // Default configuration to be overwritten
-  this.CONFIGURATION = {
-    SEED: "",
-    WIDTH: 256,
-    HEIGHT: 256,
-    VERSION: "10.98",
-    TERRAIN_ONLY: false,
-    GENERATION: {
-      A: 1,
-      B: 0.92,
-      C: 0.25,
-      CAVE_DEPTH: 20,
-      CAVE_ROUGHNESS: 0.45,
-      CAVE_CHANCE: 0.09,
-      SAND_BIOME: true,
-      EUCLIDEAN: false,
-      SMOOTH_COASTLINE: true,
-      ADD_CAVES: true,
-      WATER_LEVEL: 2,
-      EXPONENT: 1.4,
-      LINEAR: 6,
-      MOUNTAIN_TYPE: "EARTH_MOUNTAIN",
-      FREQUENCIES: [
-        { f: 1, weight: 0.3 },
-        { f: 2, weight: 0.2 },
-        { f: 4, weight: 0.2 },
-        { f: 8, weight: 0.125 },
-        { f: 16, weight: 0.1 },
-        { f: 32, weight: 0.05 },
-        { f: 64, weight: 0.0025 },
-      ],
-    },
-  }
+  this.CONFIGURATION = DEFAULT_CONFIG
 }
 
 OTMapGenerator.prototype.createRGBALayer = function (layer) {
@@ -645,11 +647,15 @@ OTMapGenerator.prototype.zNoiseFunction = function (x, y) {
 
   // Island parameters
   /** Increments the noise by x (noise + x) */
-  const noiseIncrementer = Number(this.CONFIGURATION.GENERATION.A)
+  const noiseIncrementer = Number(this.CONFIGURATION.GENERATION.NOISE_INCREMENT)
   /** Multiplies the distance from center ((1 - x) * distance) */
-  const distanceMultiplier = Number(this.CONFIGURATION.GENERATION.B)
+  const distanceMultiplier = Number(
+    this.CONFIGURATION.GENERATION.ISLAND_DISTANCE_DECREMENT
+  )
   /** Exponential for the island distance from center */
-  const distanceExponential = Number(this.CONFIGURATION.GENERATION.C)
+  const distanceExponential = Number(
+    this.CONFIGURATION.GENERATION.ISLAND_DISTANCE_EXPONENT
+  )
   /** Exponential for the noise (for higher elevations) */
   const noiseExponential = Number(this.CONFIGURATION.GENERATION.EXPONENT)
   /** Multiplies the final noise result */
@@ -977,3 +983,4 @@ function pushItemToArray(array, item) {
 }
 
 module.exports.OTMapGenerator = OTMapGenerator
+module.exports.DEFAULT_CONFIG = DEFAULT_CONFIG
